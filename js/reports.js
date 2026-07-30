@@ -1,0 +1,237 @@
+function binId(bin) {
+  return bin.lat.toFixed(6) + '_' + bin.lng.toFixed(6);
+}
+
+let _supabaseClient;
+function getSupabaseClient() {
+  if (_supabaseClient !== undefined) return _supabaseClient;
+  const notConfigured = !SUPABASE_URL || !SUPABASE_ANON_KEY ||
+    SUPABASE_URL.indexOf('YOUR_') === 0 || SUPABASE_ANON_KEY.indexOf('YOUR_') === 0;
+  if (notConfigured || !window.supabase) {
+    _supabaseClient = null;
+  } else {
+    _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+  return _supabaseClient;
+}
+
+function timeAgo(isoString) {
+  const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes + (minutes === 1 ? ' minute ago' : ' minutes ago');
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + (hours === 1 ? ' hour ago' : ' hours ago');
+  const days = Math.floor(hours / 24);
+  if (days < 30) return days + (days === 1 ? ' day ago' : ' days ago');
+  const months = Math.floor(days / 30);
+  return months + (months === 1 ? ' month ago' : ' months ago');
+}
+
+const REPORT_TYPE_LABELS = {
+  full: { icon: '🔴', label: 'Reported full' },
+  damaged: { icon: '⚠️', label: 'Reported damaged / not working' },
+  other: { icon: 'ℹ️', label: 'Other issue reported' }
+};
+
+async function fetchReportsByBin(category) {
+  const client = getSupabaseClient();
+  if (!client) return {};
+  const { data, error } = await client
+    .from('bin_reports')
+    .select('*')
+    .eq('bin_category', category)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Failed to fetch reports:', error.message);
+    return {};
+  }
+  const byBin = {};
+  data.forEach(function (r) {
+    if (!byBin[r.bin_id]) byBin[r.bin_id] = [];
+    byBin[r.bin_id].push(r);
+  });
+  return byBin;
+}
+
+async function uploadReportPhoto(file, category, id) {
+  const client = getSupabaseClient();
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const path = category + '/' + id + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+  const { error } = await client.storage.from('bin-report-photos').upload(path, file, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: file.type || 'image/jpeg'
+  });
+  if (error) throw error;
+  const { data } = client.storage.from('bin-report-photos').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+async function submitBinReport(opts) {
+  const client = getSupabaseClient();
+  if (!client) {
+    const err = new Error('Reporting isn\'t set up yet. Please check back soon.');
+    err.code = 'NOT_CONFIGURED';
+    throw err;
+  }
+
+  let photoUrl = null;
+  if (opts.photoFile) {
+    photoUrl = await uploadReportPhoto(opts.photoFile, opts.category, binId(opts.bin));
+  }
+
+  const { error } = await client.from('bin_reports').insert({
+    bin_category: opts.category,
+    bin_id: binId(opts.bin),
+    bin_name: opts.bin.name,
+    lat: opts.bin.lat,
+    lng: opts.bin.lng,
+    report_type: opts.reportType,
+    description: opts.description || null,
+    photo_url: photoUrl
+  });
+  if (error) throw error;
+}
+
+// ---- Modal ----
+
+let _modalEl = null;
+let _modalState = null;
+
+function ensureReportModal() {
+  if (_modalEl) return _modalEl;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'report-modal-overlay';
+  overlay.innerHTML =
+    '<div class="report-modal" role="dialog" aria-modal="true" aria-labelledby="report-modal-title">' +
+      '<button type="button" class="report-modal-close" aria-label="Close">&times;</button>' +
+      '<h3 id="report-modal-title">Report an issue</h3>' +
+      '<p class="report-modal-bin-name"></p>' +
+      '<form class="report-form">' +
+        '<div class="field">' +
+          '<label>What\'s wrong?</label>' +
+          '<div class="report-type-options">' +
+            '<label class="report-type-option"><input type="radio" name="reportType" value="full" checked><span>🔴 Bin is full</span></label>' +
+            '<label class="report-type-option"><input type="radio" name="reportType" value="damaged"><span>⚠️ Damaged / not working</span></label>' +
+            '<label class="report-type-option"><input type="radio" name="reportType" value="other"><span>ℹ️ Other issue</span></label>' +
+          '</div>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label for="report-description">Description <span class="field-hint">(where exactly, and what\'s wrong)</span></label>' +
+          '<textarea id="report-description" rows="3" placeholder="e.g. Bin at the carpark entrance is overflowing, lid won\'t close"></textarea>' +
+        '</div>' +
+        '<div class="field">' +
+          '<label for="report-photo">Add a photo <span class="field-hint">(optional)</span></label>' +
+          '<input type="file" id="report-photo" accept="image/*">' +
+          '<img class="report-photo-preview" alt="Preview" style="display:none;">' +
+        '</div>' +
+        '<p class="report-form-error" role="alert"></p>' +
+        '<div class="report-modal-actions">' +
+          '<button type="button" class="report-cancel-btn">Cancel</button>' +
+          '<button type="submit" class="report-submit-btn">Submit report</button>' +
+        '</div>' +
+      '</form>' +
+      '<div class="report-success" style="display:none;">✅ Thanks — your report has been posted for other users to see.</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+  _modalEl = overlay;
+
+  const closeBtn = overlay.querySelector('.report-modal-close');
+  const cancelBtn = overlay.querySelector('.report-cancel-btn');
+  const form = overlay.querySelector('.report-form');
+  const photoInput = overlay.querySelector('#report-photo');
+  const photoPreview = overlay.querySelector('.report-photo-preview');
+  const errorEl = overlay.querySelector('.report-form-error');
+  const submitBtn = overlay.querySelector('.report-submit-btn');
+  const successEl = overlay.querySelector('.report-success');
+
+  function closeModal() {
+    overlay.classList.remove('open');
+    form.reset();
+    photoPreview.style.display = 'none';
+    errorEl.textContent = '';
+    form.style.display = '';
+    successEl.style.display = 'none';
+    _modalState = null;
+  }
+
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closeModal();
+  });
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+
+  photoInput.addEventListener('change', function () {
+    const file = photoInput.files[0];
+    errorEl.textContent = '';
+    if (!file) {
+      photoPreview.style.display = 'none';
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      errorEl.textContent = 'Please choose an image file.';
+      photoInput.value = '';
+      photoPreview.style.display = 'none';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      errorEl.textContent = 'Photo must be under 5 MB.';
+      photoInput.value = '';
+      photoPreview.style.display = 'none';
+      return;
+    }
+    photoPreview.src = URL.createObjectURL(file);
+    photoPreview.style.display = 'block';
+  });
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!_modalState) return;
+    errorEl.textContent = '';
+
+    const reportType = form.querySelector('input[name="reportType"]:checked').value;
+    const description = form.querySelector('#report-description').value.trim();
+    const photoFile = photoInput.files[0] || null;
+
+    if (reportType === 'other' && !description) {
+      errorEl.textContent = 'Please add a short description for "Other issue".';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+
+    try {
+      await submitBinReport({
+        category: _modalState.category,
+        bin: _modalState.bin,
+        reportType: reportType,
+        description: description,
+        photoFile: photoFile
+      });
+      form.style.display = 'none';
+      successEl.style.display = 'block';
+      if (_modalState.onSubmitted) _modalState.onSubmitted();
+      setTimeout(closeModal, 1600);
+    } catch (err) {
+      errorEl.textContent = err.code === 'NOT_CONFIGURED'
+        ? err.message
+        : 'Something went wrong submitting your report. Please try again.';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit report';
+    }
+  });
+
+  return overlay;
+}
+
+function openReportModal(bin, category, onSubmitted) {
+  const overlay = ensureReportModal();
+  _modalState = { bin: bin, category: category, onSubmitted: onSubmitted };
+  overlay.querySelector('.report-modal-bin-name').textContent = bin.name + ' — ' + bin.address;
+  overlay.classList.add('open');
+}

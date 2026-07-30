@@ -1,0 +1,80 @@
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.bin-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 1.75rem 1rem;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+
+.bin-btn:hover, .bin-btn:focus-visible {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+}
+
+.bin-btn .icon {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.bin-btn .sub {
+  font-weight: 400;
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+
+.btn-blue {
+  position: relative;
+  background-image: linear-gradient(180deg, rgba(0,40,90,0.15), rgba(0,40,90,0.75)), url("../assets/blue-bin.jpg");
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.btn-blue .sub { color: #cfe8ff; }
+
+.btn-ewaste {
+  position: relative;
+  background-image: linear-gradient(180deg, rgba(20,20,30,0.2), rgba(20,20,30,0.78)), url("../assets/ewaste-bin.jpg");
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.btn-ewaste .sub { color: #d8d8ff; }
+
+.btn-textile {
+  position: relative;
+  background-image: linear-gradient(180deg, rgba(9,20,60,0.15), rgba(9,20,60,0.75)), url("../assets/textile-bin.jpg");
+  background-size: cover;
+  background-position: top center;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.btn-textile .sub { color: #ffe9a8; }
+
+@media (max-width: 620px) {
+  .buttons {
+    grid-template-columns: 1fr;
+  }
+}
