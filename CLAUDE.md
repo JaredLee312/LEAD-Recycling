@@ -151,6 +151,29 @@ python -m http.server 8743
 (There's also a `.claude/launch.json` one level up configured for this, if
 using Claude Code's preview tooling.)
 
+## Tests
+
+The site itself still has no build step and ships with zero dependencies —
+Vitest is a **dev-only** tool for running the test suite, it's never loaded
+by the actual pages. Requires Node.js.
+
+```
+npm install
+npm test
+```
+
+`js/list.js` and `js/reports.js` end with a small `if (typeof module !==
+'undefined') { module.exports = {...} }` block — this only runs under
+Node/Vitest (`module` doesn't exist in a browser `<script>` tag), so it
+exports the pure logic functions for testing without changing anything
+about how the pages actually load these files. Two things were pulled out
+of inline handlers into standalone functions specifically to make them
+unit-testable: `selectAndSortBins()` in `list.js` (the search/filter/sort
+logic) and `validateReportForm()` / `validatePhotoFile()` in `reports.js`
+(the report form's validation rules). If you change what those rules are,
+update `tests/list.test.js` / `tests/reports.test.js` to match — that's
+the whole point of having them.
+
 ## Known limitations (by design, not bugs)
 
 - Blue bin list is a sample, not exhaustive — the note on that page and this

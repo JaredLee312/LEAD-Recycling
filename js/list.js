@@ -49,6 +49,29 @@ function findTownMatch(query) {
   return TOWN_CENTERS.find(function (t) { return t.name.toLowerCase() === norm; }) || null;
 }
 
+function selectAndSortBins(data, rawQuery) {
+  const query = (rawQuery || '').trim().toLowerCase();
+  const townMatch = findTownMatch(rawQuery || '');
+  const anchor = townMatch ? { lat: townMatch.lat, lng: townMatch.lng } : null;
+
+  let filtered = data;
+  if (query && !townMatch) {
+    filtered = filtered.filter(function (b) {
+      return b.name.toLowerCase().includes(query) ||
+        b.address.toLowerCase().includes(query) ||
+        b.region.toLowerCase().includes(query);
+    });
+  }
+
+  if (anchor) {
+    filtered = filtered.map(function (b) {
+      return Object.assign({}, b, { distanceKm: haversineKm(anchor.lat, anchor.lng, b.lat, b.lng) });
+    }).sort(function (a, b) { return a.distanceKm - b.distanceKm; });
+  }
+
+  return { filtered: filtered, townMatch: townMatch };
+}
+
 function populateTownList() {
   const datalist = document.getElementById('town-options');
   if (!datalist) return;
@@ -109,24 +132,9 @@ function initBinList(data, category) {
 
   function render() {
     const rawQuery = searchEl.value.trim();
-    const query = rawQuery.toLowerCase();
-    const townMatch = findTownMatch(rawQuery);
-    const anchor = townMatch ? { lat: townMatch.lat, lng: townMatch.lng } : null;
-
-    let filtered = data;
-    if (query && !townMatch) {
-      filtered = filtered.filter(function (b) {
-        return b.name.toLowerCase().includes(query) ||
-          b.address.toLowerCase().includes(query) ||
-          b.region.toLowerCase().includes(query);
-      });
-    }
-
-    if (anchor) {
-      filtered = filtered.map(function (b) {
-        return Object.assign({}, b, { distanceKm: haversineKm(anchor.lat, anchor.lng, b.lat, b.lng) });
-      }).sort(function (a, b) { return a.distanceKm - b.distanceKm; });
-    }
+    const selection = selectAndSortBins(data, rawQuery);
+    const filtered = selection.filtered;
+    const townMatch = selection.townMatch;
 
     listEl.innerHTML = '';
     filtered.forEach(function (b, i) {
@@ -212,4 +220,17 @@ function initBinList(data, category) {
 
   render();
   loadReports();
+}
+
+// Node/Vitest export — no effect in the browser (module is undefined there),
+// keeps every function above as a plain global for the <script> tags.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    haversineKm: haversineKm,
+    formatDistance: formatDistance,
+    mapsUrl: mapsUrl,
+    TOWN_CENTERS: TOWN_CENTERS,
+    findTownMatch: findTownMatch,
+    selectAndSortBins: selectAndSortBins
+  };
 }

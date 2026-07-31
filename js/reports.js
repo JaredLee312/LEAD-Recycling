@@ -15,6 +15,24 @@ function markReportSubmitted() {
   localStorage.setItem(REPORT_COOLDOWN_KEY, String(Date.now()));
 }
 
+function validateReportForm(form) {
+  if (form.reportType === 'other' && !form.description) {
+    return 'Please add a short description for "Other issue".';
+  }
+  return null;
+}
+
+function validatePhotoFile(file) {
+  if (!file) return null;
+  if (!file.type || !file.type.startsWith('image/')) {
+    return 'Please choose an image file.';
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return 'Photo must be under 5 MB.';
+  }
+  return null;
+}
+
 let _supabaseClient;
 function getSupabaseClient() {
   if (_supabaseClient !== undefined) return _supabaseClient;
@@ -185,14 +203,9 @@ function ensureReportModal() {
       photoPreview.style.display = 'none';
       return;
     }
-    if (!file.type.startsWith('image/')) {
-      errorEl.textContent = 'Please choose an image file.';
-      photoInput.value = '';
-      photoPreview.style.display = 'none';
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      errorEl.textContent = 'Photo must be under 5 MB.';
+    const photoError = validatePhotoFile(file);
+    if (photoError) {
+      errorEl.textContent = photoError;
       photoInput.value = '';
       photoPreview.style.display = 'none';
       return;
@@ -210,8 +223,9 @@ function ensureReportModal() {
     const description = form.querySelector('#report-description').value.trim();
     const photoFile = photoInput.files[0] || null;
 
-    if (reportType === 'other' && !description) {
-      errorEl.textContent = 'Please add a short description for "Other issue".';
+    const formError = validateReportForm({ reportType: reportType, description: description });
+    if (formError) {
+      errorEl.textContent = formError;
       return;
     }
 
@@ -257,4 +271,19 @@ function openReportModal(bin, category, onSubmitted) {
   _modalState = { bin: bin, category: category, onSubmitted: onSubmitted };
   overlay.querySelector('.report-modal-bin-name').textContent = bin.name + ' — ' + bin.address;
   overlay.classList.add('open');
+}
+
+// Node/Vitest export — no effect in the browser (module is undefined there),
+// keeps every function above as a plain global for the <script> tags.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    binId: binId,
+    timeAgo: timeAgo,
+    REPORT_COOLDOWN_MS: REPORT_COOLDOWN_MS,
+    reportCooldownRemainingMs: reportCooldownRemainingMs,
+    markReportSubmitted: markReportSubmitted,
+    validateReportForm: validateReportForm,
+    validatePhotoFile: validatePhotoFile,
+    REPORT_TYPE_LABELS: REPORT_TYPE_LABELS
+  };
 }
