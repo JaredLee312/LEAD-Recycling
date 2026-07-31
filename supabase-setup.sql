@@ -30,9 +30,14 @@ create policy "Public can submit reports"
   with check (true);
 
 -- Storage bucket for report photos
-insert into storage.buckets (id, name, public)
-values ('bin-report-photos', 'bin-report-photos', true)
-on conflict (id) do nothing;
+-- file_size_limit is in bytes (5242880 = 5 MB) and allowed_mime_types restricts
+-- uploads to actual images, enforced by Supabase itself (not just our JS) so a
+-- direct API call can't bypass the client-side checks in js/reports.js
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('bin-report-photos', 'bin-report-photos', true, 5242880, array['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+on conflict (id) do update set
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 create policy "Public can view report photos"
   on storage.objects for select

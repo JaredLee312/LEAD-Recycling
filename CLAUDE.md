@@ -85,9 +85,19 @@ real Supabase project (free tier, Singapore region):
 - Storage bucket `bin-report-photos`, public.
 - RLS policies allow public (anon) INSERT and SELECT on both — **there is no
   login system**, so this is intentionally open. Anyone can post a report;
-  no one (other than via the Supabase dashboard) can delete one. If abuse
-  becomes a problem, the fix is either adding auth or a rate-limit check
-  (e.g. a Supabase Edge Function) — not currently implemented.
+  no one (other than via the Supabase dashboard) can delete one.
+- Basic spam control: `js/reports.js` enforces a 60-second cooldown between
+  submissions per browser (via `localStorage`, see `REPORT_COOLDOWN_MS`).
+  This is a UX-level deterrent, not real security — it's trivially bypassed
+  by clearing storage or using a different browser/device. A real fix would
+  be server-side (e.g. a Supabase Edge Function rate-limiting by IP, or a
+  CAPTCHA) — not currently implemented, and worth calling out honestly as a
+  known gap rather than a solved problem.
+- The photo upload bucket enforces file type (`image/jpeg|png|webp|gif`
+  only) and a 5 MB size limit **server-side**, via `file_size_limit` /
+  `allowed_mime_types` on the `bin-report-photos` bucket (see
+  `supabase-setup.sql`) — this can't be bypassed by skipping the app's own
+  UI and calling the Storage API directly, unlike the cooldown above.
 - `js/supabase-config.js` holds the Project URL and **anon/publishable** key
   (safe to expose client-side by design — never put the `service_role` key
   here). If `js/reports.js` can't find real values there, it fails soft: no
@@ -97,6 +107,37 @@ real Supabase project (free tier, Singapore region):
 To add reporting support for a new category, add its slug to the
 `bin_category` CHECK constraint on `bin_reports` (one `ALTER TABLE` in the
 Supabase SQL editor).
+
+## Privacy & PDPA alignment
+
+This is a deliberate data-minimization design, not an accident:
+
+- **No accounts, ever.** There is no login, no name field, no email field,
+  anywhere in the app — including on the report form. We don't ask for
+  identity because no feature actually needs it.
+- **What `bin_reports` actually stores**: which bin, what type of issue
+  (full/damaged/other), an optional free-text description, an optional
+  photo, and a timestamp. That's the full set of columns — see
+  `supabase-setup.sql`. None of it identifies the reporter.
+- **Photos are the one residual risk.** A photo could incidentally capture
+  a bystander's face or a vehicle plate even though we don't ask for that.
+  The report form shows a standing notice ("Photos are visible to everyone.
+  Please avoid capturing people, faces, or vehicle license plates.") right
+  above the upload field — a UI control, not just a policy statement.
+- **No tracking beyond what Supabase's infrastructure logs by default**
+  (e.g. request IPs at the hosting layer) — the application itself does not
+  read, store, or display IP addresses, device IDs, or any other
+  identifier tied to a person.
+- **Why this matters for PDPA**: Singapore's Personal Data Protection Act
+  obligates minimizing collection to what's necessary for the stated
+  purpose. Since "report a bin as full" has no legitimate need for who is
+  reporting it, not collecting identity isn't just simpler — it's the
+  compliant choice, and it also shrinks the Defense-pillar attack surface
+  (a breach of `bin_reports` exposes no PII, because there isn't any).
+
+If a future feature genuinely needs identity (e.g. a moderation dashboard
+restricted to admins), that should be scoped as its own auth system with
+its own justification — not bolted onto the public reporting flow.
 
 ## Running it locally
 

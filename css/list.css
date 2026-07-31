@@ -320,6 +320,13 @@
   border-color: var(--accent, var(--green));
 }
 
+.report-photo-privacy {
+  font-size: 0.76rem;
+  color: var(--muted);
+  margin-top: 0.4rem;
+  line-height: 1.4;
+}
+
 .report-photo-preview {
   margin-top: 0.6rem;
   max-width: 100%;

@@ -2,6 +2,19 @@ function binId(bin) {
   return bin.lat.toFixed(6) + '_' + bin.lng.toFixed(6);
 }
 
+const REPORT_COOLDOWN_MS = 60 * 1000;
+const REPORT_COOLDOWN_KEY = 'recyclesg_last_report_at';
+
+function reportCooldownRemainingMs() {
+  const last = Number(localStorage.getItem(REPORT_COOLDOWN_KEY) || 0);
+  const remaining = REPORT_COOLDOWN_MS - (Date.now() - last);
+  return remaining > 0 ? remaining : 0;
+}
+
+function markReportSubmitted() {
+  localStorage.setItem(REPORT_COOLDOWN_KEY, String(Date.now()));
+}
+
 let _supabaseClient;
 function getSupabaseClient() {
   if (_supabaseClient !== undefined) return _supabaseClient;
@@ -125,6 +138,7 @@ function ensureReportModal() {
         '<div class="field">' +
           '<label for="report-photo">Add a photo <span class="field-hint">(optional)</span></label>' +
           '<input type="file" id="report-photo" accept="image/*">' +
+          '<p class="report-photo-privacy">Photos are visible to everyone. Please avoid capturing people, faces, or vehicle license plates.</p>' +
           '<img class="report-photo-preview" alt="Preview" style="display:none;">' +
         '</div>' +
         '<p class="report-form-error" role="alert"></p>' +
@@ -201,6 +215,14 @@ function ensureReportModal() {
       return;
     }
 
+    const cooldown = reportCooldownRemainingMs();
+    if (cooldown > 0) {
+      errorEl.textContent = 'You just submitted a report — please wait ' +
+        Math.ceil(cooldown / 1000) + ' more second' + (Math.ceil(cooldown / 1000) === 1 ? '' : 's') +
+        ' before submitting another.';
+      return;
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting…';
 
@@ -212,6 +234,7 @@ function ensureReportModal() {
         description: description,
         photoFile: photoFile
       });
+      markReportSubmitted();
       form.style.display = 'none';
       successEl.style.display = 'block';
       if (_modalState.onSubmitted) _modalState.onSubmitted();
