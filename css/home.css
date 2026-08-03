@@ -74,8 +74,12 @@
 .btn-textile .sub { color: #ffe9a8; }
 
 .btn-bcrs {
-  background: linear-gradient(160deg, var(--bcrs), var(--bcrs-dark));
+  position: relative;
+  background-image: linear-gradient(180deg, rgba(4,60,55,0.2), rgba(4,60,55,0.78)), url("../assets/bcrs-bin.png");
+  background-size: cover;
+  background-position: center;
   color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 .btn-bcrs .sub { color: #bdfff5; }
