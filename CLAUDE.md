@@ -1,4 +1,4 @@
-# RecycleSG — Recycling Bin Locator
+# BinFinderSG — Recycling Bin Locator
 
 A static site (Singapore) that helps users find the nearest blue bin, e-waste point,
 or textile bin, and report issues (full/damaged) on any of them. No build step —
