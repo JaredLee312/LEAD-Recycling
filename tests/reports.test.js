@@ -58,6 +58,16 @@ describe('timeAgo', () => {
   });
 });
 
+describe('validateReportForm — a report type must be actively chosen', () => {
+  it('blocks submission when no report type is selected at all', () => {
+    expect(validateReportForm({ reportType: '', description: '' })).not.toBeNull();
+  });
+
+  it('blocks submission when reportType is missing entirely', () => {
+    expect(validateReportForm({ description: 'Something is wrong' })).not.toBeNull();
+  });
+});
+
 describe('validateReportForm — Legal Tech rule: "Other" issues need a description', () => {
   it('blocks submission when type is "other" with no description', () => {
     expect(validateReportForm({ reportType: 'other', description: '' })).not.toBeNull();

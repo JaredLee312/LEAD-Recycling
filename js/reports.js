@@ -16,6 +16,9 @@ function markReportSubmitted() {
 }
 
 function validateReportForm(form) {
+  if (!form.reportType) {
+    return 'Please select what\'s wrong with the bin.';
+  }
   if (form.reportType === 'other' && !form.description) {
     return 'Please add a short description for "Other issue".';
   }
@@ -144,7 +147,7 @@ function ensureReportModal() {
         '<div class="field">' +
           '<label>What\'s wrong?</label>' +
           '<div class="report-type-options">' +
-            '<label class="report-type-option"><input type="radio" name="reportType" value="full" checked><span>🔴 Bin is full</span></label>' +
+            '<label class="report-type-option"><input type="radio" name="reportType" value="full"><span>🔴 Bin is full</span></label>' +
             '<label class="report-type-option"><input type="radio" name="reportType" value="damaged"><span>⚠️ Damaged / not working</span></label>' +
             '<label class="report-type-option"><input type="radio" name="reportType" value="other"><span>ℹ️ Other issue</span></label>' +
           '</div>' +
@@ -219,7 +222,8 @@ function ensureReportModal() {
     if (!_modalState) return;
     errorEl.textContent = '';
 
-    const reportType = form.querySelector('input[name="reportType"]:checked').value;
+    const checkedType = form.querySelector('input[name="reportType"]:checked');
+    const reportType = checkedType ? checkedType.value : '';
     const description = form.querySelector('#report-description').value.trim();
     const photoFile = photoInput.files[0] || null;
 
