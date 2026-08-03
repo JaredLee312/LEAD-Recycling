@@ -1,6 +1,6 @@
 .buttons {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
 }
 
@@ -72,6 +72,13 @@
 }
 
 .btn-textile .sub { color: #ffe9a8; }
+
+.btn-bcrs {
+  background: linear-gradient(160deg, var(--bcrs), var(--bcrs-dark));
+  color: #fff;
+}
+
+.btn-bcrs .sub { color: #bdfff5; }
 
 @media (max-width: 620px) {
   .buttons {

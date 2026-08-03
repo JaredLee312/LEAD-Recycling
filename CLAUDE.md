@@ -7,23 +7,26 @@ plain HTML/CSS/JS, opened directly or served as static files.
 ## Structure
 
 ```
-index.html          Homepage — 3 category buttons (Blue Bins / E-Waste / Textile)
+index.html          Homepage — 4 category buttons (Blue Bins / E-Waste / Textile / BCRS)
 blue-bin.html        List page for blue (paper/plastic/glass/metal) bins
 e-waste.html          List page for e-waste bins
 textile.html          List page for textile/clothing bins
+bcrs.html             List page for BCRS beverage container return points
 css/main.css          Shared: reset, header, footer, card layout, CSS variables
 css/home.css           Homepage-only: category button grid + backgrounds
 css/list.css            List-page-only: search bar, bin cards, report modal
 js/list.js               Renders bin list, town search, distance sort, report UI wiring
 js/reports.js             Supabase client, report modal, submit/fetch logic
 js/supabase-config.js       SUPABASE_URL + SUPABASE_ANON_KEY (safe to commit — public key)
-assets/*.jpg               Homepage button background photos
+assets/*.jpg               Homepage button background photos (blue/e-waste/textile only —
+                           BCRS has no photo yet, its button is icon + solid color instead)
 supabase-setup.sql          One-time SQL to run in a new Supabase project (see below)
 ```
 
 Each list page is self-contained: header/copy + a `<script>` block at the bottom
 with a hardcoded JS array of `{ name, address, region, lat, lng }` objects, passed to
-`initBinList(data, category)` where `category` is `'blue-bin' | 'e-waste' | 'textile'`.
+`initBinList(data, category)` where `category` is
+`'blue-bin' | 'e-waste' | 'textile' | 'bcrs'`.
 
 ## Data source
 
@@ -39,16 +42,22 @@ JS array:
   deliberately a curated sample, not the full set.
 - E-waste: 532 locations — effectively the complete set found.
 - Textile: 398 locations — effectively the complete current Cloop network.
+- BCRS (beverage container return points): 927 locations — effectively the
+  complete set found. All 4 categories' raw data came from a single API pull
+  (`materialTypes` on each record distinguishes them), so adding BCRS required
+  no new API calls, just reprocessing data already on disk.
 
 Region tags (`Central / East / North / North-East / West`) and the "Near X,
 Singapore" address text were derived by finding each point's nearest of 20 town
 centers (see `TOWN_CENTERS` in `js/list.js`), not from an official field.
 
-**To add another category** (e.g. Glass, Beverage/BCRS — both material types
-already exist in that same API): re-run the same server-side pull filtered for
-the new material type, generate a JS array in the same shape, copy one of the
-existing list HTML pages as a template, add a homepage button + accent color.
-See the "Design system" section below for the color/CSS pattern to follow.
+**To add another category** (e.g. Glass — the one remaining material type
+already present in that same API pull): reprocess the cached raw data filtered
+for `GLASS` in `materialTypes`, generate a JS array in the same shape, copy
+`bcrs.html` as a template, add a homepage button + accent color (see "Design
+system" below), and add the category slug to the `bin_category` CHECK
+constraint on `bin_reports` (see `supabase-update-add-bcrs-category.sql` for
+the pattern — same idea, different value).
 
 ## Location search (no geolocation)
 

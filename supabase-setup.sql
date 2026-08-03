@@ -5,7 +5,7 @@ create extension if not exists pgcrypto;
 create table if not exists bin_reports (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
-  bin_category text not null check (bin_category in ('blue-bin', 'e-waste', 'textile')),
+  bin_category text not null check (bin_category in ('blue-bin', 'e-waste', 'textile', 'bcrs')),
   bin_id text not null,
   bin_name text not null,
   lat double precision not null,
