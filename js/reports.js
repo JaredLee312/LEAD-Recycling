@@ -19,21 +19,32 @@ function validateReportForm(form) {
   if (!form.reportType) {
     return 'Please select what\'s wrong with the bin.';
   }
+  if (!form.hasPhoto) {
+    return 'Please attach a photo of the bin.';
+  }
   if (form.reportType === 'other' && !form.description) {
     return 'Please add a short description for "Other issue".';
   }
   return null;
 }
 
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+
 function validatePhotoFile(file) {
   if (!file) return null;
   if (!file.type || !file.type.startsWith('image/')) {
     return 'Please choose an image file.';
   }
-  if (file.size > 5 * 1024 * 1024) {
-    return 'Photo must be under 5 MB.';
+  if (file.size > MAX_PHOTO_BYTES) {
+    return 'Photo must be under 10 MB.';
   }
   return null;
+}
+
+const REPORT_VISIBILITY_MS = 24 * 60 * 60 * 1000;
+
+function isReportVisible(createdAtIso) {
+  return (Date.now() - new Date(createdAtIso).getTime()) < REPORT_VISIBILITY_MS;
 }
 
 let _supabaseClient;
@@ -71,17 +82,21 @@ const REPORT_TYPE_LABELS = {
 async function fetchReportsByBin(category) {
   const client = getSupabaseClient();
   if (!client) return {};
+  const cutoffIso = new Date(Date.now() - REPORT_VISIBILITY_MS).toISOString();
   const { data, error } = await client
     .from('bin_reports')
     .select('*')
     .eq('bin_category', category)
+    .gte('created_at', cutoffIso)
     .order('created_at', { ascending: false });
   if (error) {
     console.error('Failed to fetch reports:', error.message);
     return {};
   }
   const byBin = {};
-  data.forEach(function (r) {
+  // Defensive re-check client-side too, in case of any clock/timezone drift
+  // between this device and the database — a report must pass both.
+  data.filter(function (r) { return isReportVisible(r.created_at); }).forEach(function (r) {
     if (!byBin[r.bin_id]) byBin[r.bin_id] = [];
     byBin[r.bin_id].push(r);
   });
@@ -157,7 +172,7 @@ function ensureReportModal() {
           '<textarea id="report-description" rows="3" placeholder="e.g. Bin at the carpark entrance is overflowing, lid won\'t close"></textarea>' +
         '</div>' +
         '<div class="field">' +
-          '<label for="report-photo">Add a photo <span class="field-hint">(optional)</span></label>' +
+          '<label for="report-photo">Add a photo <span class="field-hint">(required, under 10 MB)</span></label>' +
           '<input type="file" id="report-photo" accept="image/*">' +
           '<p class="report-photo-privacy">Photos are visible to everyone. Please avoid capturing people, faces, or vehicle license plates.</p>' +
           '<img class="report-photo-preview" alt="Preview" style="display:none;">' +
@@ -227,9 +242,15 @@ function ensureReportModal() {
     const description = form.querySelector('#report-description').value.trim();
     const photoFile = photoInput.files[0] || null;
 
-    const formError = validateReportForm({ reportType: reportType, description: description });
+    const formError = validateReportForm({ reportType: reportType, description: description, hasPhoto: !!photoFile });
     if (formError) {
       errorEl.textContent = formError;
+      return;
+    }
+
+    const photoError = validatePhotoFile(photoFile);
+    if (photoError) {
+      errorEl.textContent = photoError;
       return;
     }
 
@@ -288,6 +309,9 @@ if (typeof module !== 'undefined' && module.exports) {
     markReportSubmitted: markReportSubmitted,
     validateReportForm: validateReportForm,
     validatePhotoFile: validatePhotoFile,
+    MAX_PHOTO_BYTES: MAX_PHOTO_BYTES,
+    REPORT_VISIBILITY_MS: REPORT_VISIBILITY_MS,
+    isReportVisible: isReportVisible,
     REPORT_TYPE_LABELS: REPORT_TYPE_LABELS
   };
 }

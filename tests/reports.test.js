@@ -9,6 +9,9 @@ const {
   markReportSubmitted,
   validateReportForm,
   validatePhotoFile,
+  MAX_PHOTO_BYTES,
+  REPORT_VISIBILITY_MS,
+  isReportVisible,
   REPORT_TYPE_LABELS
 } = reportsModule;
 
@@ -60,31 +63,41 @@ describe('timeAgo', () => {
 
 describe('validateReportForm — a report type must be actively chosen', () => {
   it('blocks submission when no report type is selected at all', () => {
-    expect(validateReportForm({ reportType: '', description: '' })).not.toBeNull();
+    expect(validateReportForm({ reportType: '', description: '', hasPhoto: true })).not.toBeNull();
   });
 
   it('blocks submission when reportType is missing entirely', () => {
-    expect(validateReportForm({ description: 'Something is wrong' })).not.toBeNull();
+    expect(validateReportForm({ description: 'Something is wrong', hasPhoto: true })).not.toBeNull();
+  });
+});
+
+describe('validateReportForm — a photo is compulsory', () => {
+  it('blocks submission when no photo is attached, even with a valid type selected', () => {
+    expect(validateReportForm({ reportType: 'full', description: '', hasPhoto: false })).not.toBeNull();
+  });
+
+  it('allows submission once a photo is attached', () => {
+    expect(validateReportForm({ reportType: 'full', description: '', hasPhoto: true })).toBeNull();
   });
 });
 
 describe('validateReportForm — Legal Tech rule: "Other" issues need a description', () => {
   it('blocks submission when type is "other" with no description', () => {
-    expect(validateReportForm({ reportType: 'other', description: '' })).not.toBeNull();
+    expect(validateReportForm({ reportType: 'other', description: '', hasPhoto: true })).not.toBeNull();
   });
 
   it('allows submission when type is "other" with a description', () => {
-    expect(validateReportForm({ reportType: 'other', description: 'Lid is missing' })).toBeNull();
+    expect(validateReportForm({ reportType: 'other', description: 'Lid is missing', hasPhoto: true })).toBeNull();
   });
 
-  it('never requires a description for "full" or "damaged" — photo/description stay optional', () => {
-    expect(validateReportForm({ reportType: 'full', description: '' })).toBeNull();
-    expect(validateReportForm({ reportType: 'damaged', description: '' })).toBeNull();
+  it('never requires a description for "full" or "damaged" — description stays optional', () => {
+    expect(validateReportForm({ reportType: 'full', description: '', hasPhoto: true })).toBeNull();
+    expect(validateReportForm({ reportType: 'damaged', description: '', hasPhoto: true })).toBeNull();
   });
 });
 
 describe('validatePhotoFile — Defense: reject bad uploads before they reach the network', () => {
-  it('allows no file at all (photo is optional)', () => {
+  it('does not itself enforce presence — that is validateReportForm\'s job via hasPhoto', () => {
     expect(validatePhotoFile(null)).toBeNull();
   });
 
@@ -93,9 +106,14 @@ describe('validatePhotoFile — Defense: reject bad uploads before they reach th
     expect(err).not.toBeNull();
   });
 
-  it('rejects files over 5MB', () => {
-    const err = validatePhotoFile({ type: 'image/png', size: 6 * 1024 * 1024 });
+  it('rejects files over 10MB', () => {
+    const err = validatePhotoFile({ type: 'image/png', size: 11 * 1024 * 1024 });
     expect(err).not.toBeNull();
+  });
+
+  it('accepts a file exactly at the 10MB boundary', () => {
+    const err = validatePhotoFile({ type: 'image/png', size: MAX_PHOTO_BYTES });
+    expect(err).toBeNull();
   });
 
   it('accepts a normal small image', () => {
@@ -114,6 +132,26 @@ describe('report submission cooldown (basic spam control)', () => {
     const remaining = reportCooldownRemainingMs();
     expect(remaining).toBeGreaterThan(0);
     expect(remaining).toBeLessThanOrEqual(REPORT_COOLDOWN_MS);
+  });
+});
+
+describe('isReportVisible — reports disappear after 24 hours', () => {
+  it('a report submitted just now is visible', () => {
+    expect(isReportVisible(new Date().toISOString())).toBe(true);
+  });
+
+  it('a report from 23 hours ago is still visible', () => {
+    const iso = new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString();
+    expect(isReportVisible(iso)).toBe(true);
+  });
+
+  it('a report from 25 hours ago is no longer visible', () => {
+    const iso = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
+    expect(isReportVisible(iso)).toBe(false);
+  });
+
+  it('REPORT_VISIBILITY_MS is exactly 24 hours', () => {
+    expect(REPORT_VISIBILITY_MS).toBe(24 * 60 * 60 * 1000);
   });
 });
 

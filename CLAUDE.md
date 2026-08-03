@@ -75,9 +75,9 @@ remove that without checking for the header-overlap bug it caused before.
 
 ## Reporting system (Supabase backend)
 
-Users can report a bin as full/damaged/other, with an optional photo, from any
-list page ("Report an issue" button on each bin card). This is backed by a
-real Supabase project (free tier, Singapore region):
+Users can report a bin as full/damaged/other, with a **compulsory** photo,
+from any list page ("Report an issue" button on each bin card). This is
+backed by a real Supabase project (free tier, Singapore region):
 
 - Table `bin_reports` (see `supabase-setup.sql`) — category, bin identity
   (`bin_id` = `lat.toFixed(6) + '_' + lng.toFixed(6)`, computed client-side,
@@ -86,6 +86,20 @@ real Supabase project (free tier, Singapore region):
 - RLS policies allow public (anon) INSERT and SELECT on both — **there is no
   login system**, so this is intentionally open. Anyone can post a report;
   no one (other than via the Supabase dashboard) can delete one.
+- **A photo is required**, enforced by `validateReportForm()`'s `hasPhoto`
+  check — submission is blocked with "Please attach a photo of the bin."
+  if none is attached. Max size is **10 MB**, enforced both client-side
+  (`validatePhotoFile()`, see `MAX_PHOTO_BYTES`) and server-side on the
+  storage bucket itself (`file_size_limit` in `supabase-setup.sql` —
+  verified by bypassing the UI and calling the Storage API directly).
+- **Reports are only shown for 24 hours** after submission. `js/reports.js`
+  filters them out twice: once in the Supabase query itself (`.gte('created_at',
+  cutoff)`) and again client-side (`isReportVisible()`), as a defensive
+  double-check against clock/timezone drift. Rows are **not deleted** —
+  they still exist in the database (there's no public delete permission,
+  by design — see above), they just stop being fetched/displayed. If a
+  report genuinely needs to be removed, that's done manually via the
+  Supabase dashboard.
 - Basic spam control: `js/reports.js` enforces a 60-second cooldown between
   submissions per browser (via `localStorage`, see `REPORT_COOLDOWN_MS`).
   This is a UX-level deterrent, not real security — it's trivially bypassed
@@ -93,11 +107,6 @@ real Supabase project (free tier, Singapore region):
   be server-side (e.g. a Supabase Edge Function rate-limiting by IP, or a
   CAPTCHA) — not currently implemented, and worth calling out honestly as a
   known gap rather than a solved problem.
-- The photo upload bucket enforces file type (`image/jpeg|png|webp|gif`
-  only) and a 5 MB size limit **server-side**, via `file_size_limit` /
-  `allowed_mime_types` on the `bin-report-photos` bucket (see
-  `supabase-setup.sql`) — this can't be bypassed by skipping the app's own
-  UI and calling the Storage API directly, unlike the cooldown above.
 - `js/supabase-config.js` holds the Project URL and **anon/publishable** key
   (safe to expose client-side by design — never put the `service_role` key
   here). If `js/reports.js` can't find real values there, it fails soft: no
