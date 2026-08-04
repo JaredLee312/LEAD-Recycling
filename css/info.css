@@ -1,0 +1,106 @@
+.guide-intro {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.guide-card {
+  border-left: 6px solid var(--accent);
+}
+
+.guide-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+}
+
+.guide-icon {
+  font-size: 1.7rem;
+  flex-shrink: 0;
+}
+
+.guide-card-head h2 {
+  font-size: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.guide-sub {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.guide-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.guide-col h3 {
+  font-size: 0.85rem;
+  margin-bottom: 0.6rem;
+}
+
+.guide-accept h3 { color: #0a7d3c; }
+.guide-avoid h3 { color: #c0392b; }
+
+.guide-col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.guide-col li {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  padding-left: 1.3rem;
+  position: relative;
+}
+
+.guide-accept li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #0a7d3c;
+  font-weight: 700;
+}
+
+.guide-avoid li::before {
+  content: "✕";
+  position: absolute;
+  left: 0;
+  color: #c0392b;
+  font-weight: 700;
+}
+
+.guide-tips ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.guide-tips li {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  padding-left: 1.4rem;
+  position: relative;
+}
+
+.guide-tips li::before {
+  content: "♻";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+}
+
+@media (max-width: 620px) {
+  .guide-columns {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}

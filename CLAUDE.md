@@ -22,6 +22,10 @@ e-waste.html          List page for e-waste bins
 textile.html          List page for textile/clothing bins
 bcrs.html             List page for BCRS beverage container return points
 analytics.html         Community recycling counters (month / year / all-time) + log form
+info.html               Static "Recycling Guide" page — what's accepted/not accepted in
+                       each bin category, plus general sorting tips. No login required,
+                       no JS logic beyond the shared header/footer markup. Linked from
+                       a button on index.html.
 login.html              A second, compact sign in / sign up / MFA page — used when an
                        already-browsing visitor tries to submit a report or log entry
                        without being signed in (redirects here with ?redirect=<page>,
@@ -29,6 +33,7 @@ login.html              A second, compact sign in / sign up / MFA page — used 
 css/main.css          Shared: reset, header, footer, card layout, CSS variables,
                      .auth-status header widget (logged-in email + log out button)
 css/home.css           home.html-only: category button grid + backgrounds
+css/info.css            info.html-only: accept/avoid column lists, category accent borders
 css/welcome.css         index.html-only: hero icon strip
 css/list.css            List-page-only: search bar, bin cards, report modal
 css/analytics.css        Analytics-page-only: log form, stat tiles, material breakdown bars

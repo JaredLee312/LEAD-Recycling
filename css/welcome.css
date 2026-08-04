@@ -44,3 +44,21 @@
   font-size: 0.85rem;
   line-height: 1.6;
 }
+
+.welcome-guide-link {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid #d8e0df;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.welcome-guide-link:hover {
+  border-color: var(--green);
+  background: #fff;
+}
