@@ -177,13 +177,37 @@ that a scattered set of personal counters wouldn't.
 
 ## Authentication & MFA
 
-Browsing, searching, and viewing reports/analytics never requires an
-account. Submitting a report or a recycling log entry does. This is
-**Supabase Auth** (email + password) plus **mandatory TOTP MFA** — not
-anything hand-rolled. We never see, store, or touch a plaintext password
-or a password hash anywhere in this codebase; `authSignUp`/`authSignIn` in
-`js/auth.js` just call `client.auth.signUp()`/`signInWithPassword()` and
-Supabase handles the rest.
+Two different gates, don't conflate them:
+
+1. **`index.html` (the homepage) requires login to view at all.** This is
+   the newer, narrower decision — deliberately scoped to *just* the
+   homepage, not the whole site (see the next point).
+2. **Submitting a report or a recycling log entry requires login**,
+   regardless of which page you got there from.
+
+The bin list pages (`blue-bin.html`, `e-waste.html`, `textile.html`,
+`bcrs.html`) and `analytics.html` do **not** require login to view —
+someone with a direct link can still browse/search them freely, they just
+can't submit anything without signing in. Only `index.html` itself blocks
+viewing entirely. This was an explicit, deliberate scope choice (asked
+and confirmed) — don't "fix" it into whole-site gating without checking
+first, and don't remove the homepage gate assuming it was accidental.
+
+All of this is **Supabase Auth** (email + password) plus **mandatory TOTP
+MFA** — not anything hand-rolled. We never see, store, or touch a
+plaintext password or a password hash anywhere in this codebase;
+`authSignUp`/`authSignIn` in `js/auth.js` just call
+`client.auth.signUp()`/`signInWithPassword()` and Supabase handles the rest.
+
+- **The homepage gate**: `index.html` starts with everything except a
+  "Checking your login…" message hidden (`.gate-hidden` on `<header>` and
+  `<main>`, toggled via CSS `display: none`). The bottom-of-page script
+  calls `requireAuthOrRedirect()` — if not fully authenticated, it redirects
+  to `login.html?redirect=%2Findex.html` and the real content is never
+  revealed; if authenticated, it un-hides `header`/`main` and hides the
+  loading message. This avoids a flash of real content before a redirect
+  fires, at the cost of a brief "Checking your login…" state every time —
+  acceptable for a client-side-only gate like this.
 
 - **Flow**: sign up (email + password) → if email confirmation is off
   (see below), the user gets a session immediately and is walked straight

@@ -123,6 +123,18 @@ async function challengeAndVerifyMfa(factorId, code) {
   return data;
 }
 
+// ---- Homepage login gate ----
+// Currently only called from index.html (viewing the homepage requires
+// login; other pages stay reachable via direct link without it). Redirects
+// to login.html (preserving the current URL to return to) if the visitor
+// isn't fully authenticated, and returns false so the caller can bail out
+// of the rest of its init/render logic instead of doing wasted work.
+async function requireAuthOrRedirect() {
+  if (await isFullyAuthenticated()) return true;
+  window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+  return false;
+}
+
 // ---- Shared header auth-status widget (used on every page) ----
 
 async function renderAuthStatus(container) {

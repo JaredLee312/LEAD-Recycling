@@ -196,3 +196,18 @@ footer .footer-disclaimer {
   margin-right: auto;
   opacity: 0.85;
 }
+
+.gate-hidden {
+  display: none !important;
+}
+
+.gate-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+}

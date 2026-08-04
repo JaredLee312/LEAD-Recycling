@@ -9,14 +9,16 @@
 </head>
 <body>
 
-<header>
+<div id="gate-loading" class="gate-loading"><p>Checking your login&hellip;</p></div>
+
+<header class="gate-hidden">
   <div id="auth-status" class="auth-status"></div>
   <span class="badge">SINGAPORE</span>
   <h1>Find a Recycling Bin Near You</h1>
   <p>Locate blue recycling bins, e-waste collection points, textile bins, and beverage container return points across the island — fast.</p>
 </header>
 
-<main>
+<main class="gate-hidden">
   <div class="card">
     <h2>What are you recycling today?</h2>
     <p class="lead">Choose a category, then type your town to find the nearest drop-off point.</p>
@@ -67,7 +69,13 @@
 <script src="js/supabase-config.js"></script>
 <script src="js/auth.js"></script>
 <script>
-  renderAuthStatus(document.getElementById('auth-status'));
+  requireAuthOrRedirect().then(function (ok) {
+    if (!ok) return; // requireAuthOrRedirect() is already sending the browser to login.html
+    document.getElementById('gate-loading').style.display = 'none';
+    document.querySelector('header').classList.remove('gate-hidden');
+    document.querySelector('main').classList.remove('gate-hidden');
+    renderAuthStatus(document.getElementById('auth-status'));
+  });
 </script>
 </body>
 </html>
