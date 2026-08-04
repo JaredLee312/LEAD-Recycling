@@ -12,7 +12,7 @@
 
   function getRedirectTarget() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('redirect') || 'index.html';
+    return params.get('redirect') || 'home.html';
   }
 
   function showScreen(name) {

@@ -9,29 +9,41 @@ in (email + password + mandatory TOTP two-factor authentication).
 ## Structure
 
 ```
-index.html          Homepage — 4 category buttons (Blue Bins / E-Waste / Textile / BCRS)
-                    + a link to analytics.html
+index.html          NEW site entry point — a welcome/landing page with the sign
+                    in / sign up / MFA form embedded directly on it (email + password).
+                    Already-authenticated visitors see a "You're logged in" screen
+                    with a Continue button through to home.html.
+home.html            The actual bin-finder homepage — 4 category buttons (Blue Bins /
+                    E-Waste / Textile / BCRS) + a link to analytics.html. Requires
+                    login to view (redirects to login.html if visited directly
+                    without a session); reached from index.html after signing in.
 blue-bin.html        List page for blue (paper/plastic/glass/metal) bins
 e-waste.html          List page for e-waste bins
 textile.html          List page for textile/clothing bins
 bcrs.html             List page for BCRS beverage container return points
 analytics.html         Community recycling counters (month / year / all-time) + log form
-login.html              Sign in / sign up / MFA enrollment / MFA challenge, all one page
+login.html              A second, compact sign in / sign up / MFA page — used when an
+                       already-browsing visitor tries to submit a report or log entry
+                       without being signed in (redirects here with ?redirect=<page>,
+                       distinct from and independent of index.html's embedded form)
 css/main.css          Shared: reset, header, footer, card layout, CSS variables,
                      .auth-status header widget (logged-in email + log out button)
-css/home.css           Homepage-only: category button grid + backgrounds
+css/home.css           home.html-only: category button grid + backgrounds
+css/welcome.css         index.html-only: hero icon strip
 css/list.css            List-page-only: search bar, bin cards, report modal
 css/analytics.css        Analytics-page-only: log form, stat tiles, material breakdown bars
-css/auth.css             login.html-only: tabs, form fields, MFA QR/code screens
+css/auth.css             Shared by index.html and login.html: tabs, form fields, MFA QR/code screens
 js/list.js               Renders bin list, town search, distance sort, report UI wiring
 js/reports.js             Report modal, submit/fetch logic for bin_reports (login-gated)
 js/analytics.js            Recycling log form, totals math, material breakdown (login-gated)
 js/auth.js                 Sign up/in/out, session state, MFA enroll/challenge/verify,
                           renderAuthStatus() (the header widget, used on every page)
-js/login-page.js            Screen-switching controller for login.html only
+js/login-page.js            Screen-switching controller, shared by index.html and login.html
+                           (DOM-ID driven, not page-specific — works on either page's markup).
+                           Redirects to ?redirect=<page> after login, or home.html by default.
 js/supabase-config.js       SUPABASE_URL + SUPABASE_ANON_KEY + getSupabaseClient() — shared
                            by reports.js, analytics.js, and auth.js (safe to commit, public key)
-assets/*.jpg|png            Homepage button background photos
+assets/*.jpg|png            home.html button background photos
 supabase-setup.sql          One-time SQL to run in a new Supabase project (see below)
 ```
 
@@ -179,19 +191,19 @@ that a scattered set of personal counters wouldn't.
 
 Two different gates, don't conflate them:
 
-1. **`index.html` (the homepage) requires login to view at all.** This is
-   the newer, narrower decision — deliberately scoped to *just* the
-   homepage, not the whole site (see the next point).
+1. **`home.html` (the bin-finder homepage) requires login to view at all.**
+   This is a deliberately narrow scope choice — just this one page, not the
+   whole site (see the next point).
 2. **Submitting a report or a recycling log entry requires login**,
    regardless of which page you got there from.
 
 The bin list pages (`blue-bin.html`, `e-waste.html`, `textile.html`,
 `bcrs.html`) and `analytics.html` do **not** require login to view —
 someone with a direct link can still browse/search them freely, they just
-can't submit anything without signing in. Only `index.html` itself blocks
+can't submit anything without signing in. Only `home.html` itself blocks
 viewing entirely. This was an explicit, deliberate scope choice (asked
 and confirmed) — don't "fix" it into whole-site gating without checking
-first, and don't remove the homepage gate assuming it was accidental.
+first, and don't remove the gate assuming it was accidental.
 
 All of this is **Supabase Auth** (email + password) plus **mandatory TOTP
 MFA** — not anything hand-rolled. We never see, store, or touch a
@@ -199,11 +211,28 @@ plaintext password or a password hash anywhere in this codebase;
 `authSignUp`/`authSignIn` in `js/auth.js` just call
 `client.auth.signUp()`/`signInWithPassword()` and Supabase handles the rest.
 
-- **The homepage gate**: `index.html` starts with everything except a
-  "Checking your login…" message hidden (`.gate-hidden` on `<header>` and
-  `<main>`, toggled via CSS `display: none`). The bottom-of-page script
-  calls `requireAuthOrRedirect()` — if not fully authenticated, it redirects
-  to `login.html?redirect=%2Findex.html` and the real content is never
+- **Two login surfaces, one shared controller**: `index.html` (the site's
+  entry point) has the full sign in / sign up / MFA form embedded directly
+  on the page — that's what "the new homepage has login built in" means in
+  practice. `login.html` is a separate, compact version of the exact same
+  form, used as a redirect target whenever someone tries to submit a report
+  or log entry without a session (`login.html?redirect=<page>`). Both pages
+  share identical form markup (same element IDs) and are driven by the same
+  `js/login-page.js` — it's DOM-ID driven, not page-specific, so it works
+  unmodified on either page. Don't let the two pages' logic drift apart by
+  editing one and not the other; if the login flow changes, it changes in
+  `js/login-page.js` (or `js/auth.js`) once, not per-page.
+- **Where login leads**: after a successful sign-in/verify, both pages
+  redirect to `?redirect=<page>` if present, else default to `home.html`
+  (`getRedirectTarget()` in `js/login-page.js`). Visiting `index.html`
+  while already fully authenticated shows a "You're logged in" screen with
+  a Continue button through to `home.html`, rather than silently
+  auto-navigating — same pattern `login.html` already used.
+- **The `home.html` gate**: it starts with everything except a "Checking
+  your login…" message hidden (`.gate-hidden` on `<header>` and `<main>`,
+  toggled via CSS `display: none`). The bottom-of-page script calls
+  `requireAuthOrRedirect()` — if not fully authenticated, it redirects to
+  `login.html?redirect=%2Fhome.html` and the real content is never
   revealed; if authenticated, it un-hides `header`/`main` and hides the
   loading message. This avoids a flash of real content before a redirect
   fires, at the cost of a brief "Checking your login…" state every time —

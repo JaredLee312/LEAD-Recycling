@@ -1,0 +1,26 @@
+.welcome-icon-strip {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  font-size: 1.5rem;
+}
+
+.welcome-icon-strip span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 50%;
+}
+
+@media (max-width: 480px) {
+  .welcome-icon-strip span {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.2rem;
+  }
+}

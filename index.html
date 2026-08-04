@@ -5,59 +5,101 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BinFinderSG — Find a Recycling Bin Near You</title>
 <link rel="stylesheet" href="css/main.css">
-<link rel="stylesheet" href="css/home.css">
+<link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/welcome.css">
 </head>
 <body>
 
-<div id="gate-loading" class="gate-loading"><p>Checking your login&hellip;</p></div>
-
-<header class="gate-hidden">
-  <div id="auth-status" class="auth-status"></div>
+<header>
   <span class="badge">SINGAPORE</span>
-  <h1>Find a Recycling Bin Near You</h1>
-  <p>Locate blue recycling bins, e-waste collection points, textile bins, and beverage container return points across the island — fast.</p>
+  <h1>BinFinderSG</h1>
+  <p>Sign in to find recycling bins near you, report issues, and track your recycling impact.</p>
+  <div class="welcome-icon-strip" aria-hidden="true">
+    <span>♻️</span>
+    <span>🔌</span>
+    <span>👕</span>
+    <span>🥤</span>
+  </div>
 </header>
 
-<main class="gate-hidden">
+<main>
   <div class="card">
-    <h2>What are you recycling today?</h2>
-    <p class="lead">Choose a category, then type your town to find the nearest drop-off point.</p>
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab active" data-tab="signin">Sign In</button>
+      <button type="button" class="auth-tab" data-tab="signup">Create Account</button>
+    </div>
 
-    <div class="buttons">
-      <a class="bin-btn btn-blue" href="blue-bin.html">
-        <span class="icon">♻️</span>
-        Blue Bins
-        <span class="sub">Paper, plastic, glass, metal</span>
-      </a>
+    <!-- Sign in -->
+    <form id="signin-form" class="auth-form">
+      <div class="field">
+        <label for="signin-email">Email</label>
+        <input type="email" id="signin-email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="signin-password">Password</label>
+        <input type="password" id="signin-password" autocomplete="current-password" required>
+      </div>
+      <p class="auth-form-error" id="signin-error" role="alert"></p>
+      <button type="submit" class="auth-submit-btn">Sign In</button>
+    </form>
 
-      <a class="bin-btn btn-ewaste" href="e-waste.html">
-        <span class="icon">🔌</span>
-        E-Waste
-        <span class="sub">Electronics & batteries</span>
-      </a>
+    <!-- Sign up -->
+    <form id="signup-form" class="auth-form" style="display:none;">
+      <div class="field">
+        <label for="signup-email">Email</label>
+        <input type="email" id="signup-email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="signup-password">Password <span class="field-hint">(at least 8 characters)</span></label>
+        <input type="password" id="signup-password" autocomplete="new-password" required>
+      </div>
+      <div class="field">
+        <label for="signup-confirm">Confirm password</label>
+        <input type="password" id="signup-confirm" autocomplete="new-password" required>
+      </div>
+      <p class="auth-form-error" id="signup-error" role="alert"></p>
+      <button type="submit" class="auth-submit-btn">Create Account</button>
+    </form>
 
-      <a class="bin-btn btn-textile" href="textile.html">
-        <span class="icon">👕</span>
-        Textile Waste
-        <span class="sub">Clothes & fabric</span>
-      </a>
+    <!-- MFA enrollment (mandatory for new accounts) -->
+    <div id="mfa-enroll-screen" class="auth-form" style="display:none;">
+      <h3>Set up two-factor authentication</h3>
+      <p class="lead">Required once, using any authenticator app (Google Authenticator, Authy, etc.). Scan the QR code, then enter the 6-digit code it shows.</p>
+      <div id="mfa-qr-container" class="mfa-qr-container"></div>
+      <p class="mfa-secret-fallback">Can't scan? Enter this code manually: <code id="mfa-secret-text"></code></p>
+      <div class="field">
+        <label for="mfa-enroll-code">6-digit code</label>
+        <input type="text" id="mfa-enroll-code" inputmode="numeric" maxlength="6" placeholder="000000">
+      </div>
+      <p class="auth-form-error" id="mfa-enroll-error" role="alert"></p>
+      <button type="button" id="mfa-enroll-submit" class="auth-submit-btn">Verify & Finish Setup</button>
+    </div>
 
-      <a class="bin-btn btn-bcrs" href="bcrs.html">
-        <span class="icon">🥤</span>
-        Beverage Containers
-        <span class="sub">BCRS return points</span>
-      </a>
+    <!-- MFA challenge (returning users) -->
+    <div id="mfa-challenge-screen" class="auth-form" style="display:none;">
+      <h3>Enter your 2FA code</h3>
+      <p class="lead">Open your authenticator app and enter the current 6-digit code.</p>
+      <div class="field">
+        <label for="mfa-challenge-code">6-digit code</label>
+        <input type="text" id="mfa-challenge-code" inputmode="numeric" maxlength="6" placeholder="000000">
+      </div>
+      <p class="auth-form-error" id="mfa-challenge-error" role="alert"></p>
+      <button type="button" id="mfa-challenge-submit" class="auth-submit-btn">Verify</button>
+    </div>
+
+    <!-- Post sign-up notice -->
+    <div id="signup-notice-screen" class="auth-form" style="display:none;">
+      <h3>Check your email</h3>
+      <p class="lead" id="signup-notice-text"></p>
+    </div>
+
+    <!-- Logged in -->
+    <div id="logged-in-screen" class="auth-form" style="display:none;">
+      <h3>You're logged in</h3>
+      <p class="lead" id="logged-in-email"></p>
+      <a id="continue-link" class="auth-submit-btn auth-continue-link" href="home.html">Continue</a>
     </div>
   </div>
-
-  <a class="analytics-link" href="analytics.html">
-    <span class="analytics-link-icon">📊</span>
-    <span class="analytics-link-text">
-      <strong>See the community's recycling impact</strong>
-      <span>Log what you recycle and view live totals for everyone</span>
-    </span>
-    <span class="analytics-link-arrow">&rarr;</span>
-  </a>
 </main>
 
 <footer>
@@ -68,14 +110,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-config.js"></script>
 <script src="js/auth.js"></script>
-<script>
-  requireAuthOrRedirect().then(function (ok) {
-    if (!ok) return; // requireAuthOrRedirect() is already sending the browser to login.html
-    document.getElementById('gate-loading').style.display = 'none';
-    document.querySelector('header').classList.remove('gate-hidden');
-    document.querySelector('main').classList.remove('gate-hidden');
-    renderAuthStatus(document.getElementById('auth-status'));
-  });
-</script>
+<script src="js/login-page.js"></script>
 </body>
 </html>
