@@ -71,6 +71,57 @@ header .back-link:active {
   }
 }
 
+.auth-status {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.auth-status-link,
+.auth-status-logout {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.auth-status-link:hover,
+.auth-status-logout:hover {
+  background: rgba(255,255,255,0.24);
+}
+
+.auth-status-email {
+  color: #fff;
+  opacity: 0.9;
+  font-weight: 600;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .auth-status {
+    position: static;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  .auth-status-email {
+    max-width: 100px;
+  }
+}
+
 header .badge {
   display: inline-block;
   background: rgba(255,255,255,0.18);

@@ -12,6 +12,7 @@
 
 <header>
   <a class="back-link" href="index.html">&larr; Home</a>
+  <div id="auth-status" class="auth-status"></div>
   <span class="badge">SINGAPORE</span>
   <h1>BCRS Return Points</h1>
   <p>Return eligible drink cans and bottles under the Beverage Container Return Scheme for a small refund.</p>
@@ -46,9 +47,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/reports.js"></script>
 <script src="js/list.js"></script>
 <script>
+  renderAuthStatus(document.getElementById('auth-status'));
   initBinList([
     { name: "Fairprice Ang Mo Kio Hub", address: "Near Ang Mo Kio, Singapore", region: "North-East", lat: 1.369002, lng: 103.848159 },
     { name: "Fairprice Blk 712 Ang Mo Kio Ave 6", address: "Near Ang Mo Kio, Singapore", region: "North-East", lat: 1.371426, lng: 103.847105 },

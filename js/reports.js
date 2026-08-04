@@ -280,7 +280,11 @@ function ensureReportModal() {
   return overlay;
 }
 
-function openReportModal(bin, category, onSubmitted) {
+async function openReportModal(bin, category, onSubmitted) {
+  if (typeof isFullyAuthenticated === 'function' && !(await isFullyAuthenticated())) {
+    window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+    return;
+  }
   const overlay = ensureReportModal();
   _modalState = { bin: bin, category: category, onSubmitted: onSubmitted };
   overlay.querySelector('.report-modal-bin-name').textContent = bin.name + ' — ' + bin.address;

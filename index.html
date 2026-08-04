@@ -10,6 +10,7 @@
 <body>
 
 <header>
+  <div id="auth-status" class="auth-status"></div>
   <span class="badge">SINGAPORE</span>
   <h1>Find a Recycling Bin Near You</h1>
   <p>Locate blue recycling bins, e-waste collection points, textile bins, and beverage container return points across the island — fast.</p>
@@ -62,5 +63,11 @@
   <p class="footer-disclaimer">This is a student-created project, not an official government service. Bin locations are subject to change — please verify on-site before relying on them.</p>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  renderAuthStatus(document.getElementById('auth-status'));
+</script>
 </body>
 </html>

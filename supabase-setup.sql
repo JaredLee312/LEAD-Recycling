@@ -21,12 +21,12 @@ alter table bin_reports enable row level security;
 
 create policy "Public can read reports"
   on bin_reports for select
-  to anon
+  to public
   using (true);
 
-create policy "Public can submit reports"
+create policy "Logged-in users can submit reports"
   on bin_reports for insert
-  to anon
+  to authenticated
   with check (true);
 
 -- Storage bucket for report photos
@@ -41,12 +41,12 @@ on conflict (id) do update set
 
 create policy "Public can view report photos"
   on storage.objects for select
-  to anon
+  to public
   using (bucket_id = 'bin-report-photos');
 
-create policy "Public can upload report photos"
+create policy "Logged-in users can upload report photos"
   on storage.objects for insert
-  to anon
+  to authenticated
   with check (bucket_id = 'bin-report-photos');
 
 -- Community recycling analytics
@@ -63,10 +63,10 @@ alter table recycling_log enable row level security;
 
 create policy "Public can read recycling log"
   on recycling_log for select
-  to anon
+  to public
   using (true);
 
-create policy "Public can submit recycling log"
+create policy "Logged-in users can submit recycling log"
   on recycling_log for insert
-  to anon
+  to authenticated
   with check (true);

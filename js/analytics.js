@@ -132,6 +132,11 @@ function initAnalyticsPage() {
       return;
     }
 
+    if (typeof isFullyAuthenticated === 'function' && !(await isFullyAuthenticated())) {
+      window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+      return;
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'Logging…';
 

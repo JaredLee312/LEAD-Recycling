@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log In — BinFinderSG</title>
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/auth.css">
+<style>:root { --accent: var(--analytics); }</style>
+</head>
+<body>
+
+<header>
+  <a class="back-link" href="index.html">&larr; Home</a>
+  <span class="badge">SINGAPORE</span>
+  <h1>Log In</h1>
+  <p>An account is only needed to report an issue or log recycling — browsing bins stays open to everyone.</p>
+</header>
+
+<main>
+  <div class="card">
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab active" data-tab="signin">Sign In</button>
+      <button type="button" class="auth-tab" data-tab="signup">Create Account</button>
+    </div>
+
+    <!-- Sign in -->
+    <form id="signin-form" class="auth-form">
+      <div class="field">
+        <label for="signin-email">Email</label>
+        <input type="email" id="signin-email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="signin-password">Password</label>
+        <input type="password" id="signin-password" autocomplete="current-password" required>
+      </div>
+      <p class="auth-form-error" id="signin-error" role="alert"></p>
+      <button type="submit" class="auth-submit-btn">Sign In</button>
+    </form>
+
+    <!-- Sign up -->
+    <form id="signup-form" class="auth-form" style="display:none;">
+      <div class="field">
+        <label for="signup-email">Email</label>
+        <input type="email" id="signup-email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="signup-password">Password <span class="field-hint">(at least 8 characters)</span></label>
+        <input type="password" id="signup-password" autocomplete="new-password" required>
+      </div>
+      <div class="field">
+        <label for="signup-confirm">Confirm password</label>
+        <input type="password" id="signup-confirm" autocomplete="new-password" required>
+      </div>
+      <p class="auth-form-error" id="signup-error" role="alert"></p>
+      <button type="submit" class="auth-submit-btn">Create Account</button>
+    </form>
+
+    <!-- MFA enrollment (mandatory for new accounts) -->
+    <div id="mfa-enroll-screen" class="auth-form" style="display:none;">
+      <h3>Set up two-factor authentication</h3>
+      <p class="lead">Required once, using any authenticator app (Google Authenticator, Authy, etc.). Scan the QR code, then enter the 6-digit code it shows.</p>
+      <div id="mfa-qr-container" class="mfa-qr-container"></div>
+      <p class="mfa-secret-fallback">Can't scan? Enter this code manually: <code id="mfa-secret-text"></code></p>
+      <div class="field">
+        <label for="mfa-enroll-code">6-digit code</label>
+        <input type="text" id="mfa-enroll-code" inputmode="numeric" maxlength="6" placeholder="000000">
+      </div>
+      <p class="auth-form-error" id="mfa-enroll-error" role="alert"></p>
+      <button type="button" id="mfa-enroll-submit" class="auth-submit-btn">Verify & Finish Setup</button>
+    </div>
+
+    <!-- MFA challenge (returning users) -->
+    <div id="mfa-challenge-screen" class="auth-form" style="display:none;">
+      <h3>Enter your 2FA code</h3>
+      <p class="lead">Open your authenticator app and enter the current 6-digit code.</p>
+      <div class="field">
+        <label for="mfa-challenge-code">6-digit code</label>
+        <input type="text" id="mfa-challenge-code" inputmode="numeric" maxlength="6" placeholder="000000">
+      </div>
+      <p class="auth-form-error" id="mfa-challenge-error" role="alert"></p>
+      <button type="button" id="mfa-challenge-submit" class="auth-submit-btn">Verify</button>
+    </div>
+
+    <!-- Post sign-up notice -->
+    <div id="signup-notice-screen" class="auth-form" style="display:none;">
+      <h3>Check your email</h3>
+      <p class="lead" id="signup-notice-text"></p>
+    </div>
+
+    <!-- Logged in -->
+    <div id="logged-in-screen" class="auth-form" style="display:none;">
+      <h3>You're logged in</h3>
+      <p class="lead" id="logged-in-email"></p>
+      <a id="continue-link" class="auth-submit-btn auth-continue-link" href="index.html">Continue</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  BinFinderSG &middot; Helping Singapore recycle right
+  <p class="footer-disclaimer">This is a student-created project, not an official government service. Bin locations are subject to change — please verify on-site before relying on them.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/login-page.js"></script>
+</body>
+</html>

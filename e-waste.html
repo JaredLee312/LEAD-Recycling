@@ -12,6 +12,7 @@
 
 <header>
   <a class="back-link" href="index.html">&larr; Home</a>
+  <div id="auth-status" class="auth-status"></div>
   <span class="badge">SINGAPORE</span>
   <h1>E-Waste Bin Locations</h1>
   <p>Drop off electronics, batteries and bulbs at these ALBA e-waste collection points.</p>
@@ -46,9 +47,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="js/supabase-config.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/reports.js"></script>
 <script src="js/list.js"></script>
 <script>
+  renderAuthStatus(document.getElementById('auth-status'));
   initBinList([
     { name: "Challenger @ Ang Mo Kio Hub", address: "Near Ang Mo Kio, Singapore", region: "North-East", lat: 1.369336, lng: 103.848693 },
     { name: "Fairprice @ Ang Mo Kio Hub", address: "Near Ang Mo Kio, Singapore", region: "North-East", lat: 1.369236, lng: 103.848693 },
