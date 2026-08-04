@@ -25,7 +25,8 @@ analytics.html         Community recycling counters (month / year / all-time) + 
 info.html               Static "Recycling Guide" page — what's accepted/not accepted in
                        each bin category, plus general sorting tips. No login required,
                        no JS logic beyond the shared header/footer markup. Linked from
-                       a button on index.html.
+                       both homepages: a button on index.html and a link card on
+                       home.html (back-link always returns to index.html).
 login.html              A second, compact sign in / sign up / MFA page — used when an
                        already-browsing visitor tries to submit a report or log entry
                        without being signed in (redirects here with ?redirect=<page>,
