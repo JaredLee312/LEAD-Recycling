@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recycling Analytics — BinFinderSG</title>
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/analytics.css">
+<style>:root { --accent: var(--analytics); }</style>
+</head>
+<body>
+
+<header>
+  <a class="back-link" href="index.html">&larr; Home</a>
+  <span class="badge">SINGAPORE</span>
+  <h1>Recycling Analytics</h1>
+  <p>Log what you recycled and see the whole community's impact, updated live.</p>
+</header>
+
+<main>
+  <div class="card">
+    <h2>Log your recycling</h2>
+    <p class="lead">Every entry adds to the totals below for everyone to see.</p>
+
+    <form id="log-form" class="log-form">
+      <div class="log-form-row">
+        <div class="field">
+          <label for="log-material">Material</label>
+          <select id="log-material" required>
+            <option value="" selected disabled>Choose a material</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="log-quantity">How many items?</label>
+          <input type="number" id="log-quantity" min="1" step="1" placeholder="e.g. 3" required>
+        </div>
+      </div>
+      <p id="log-form-error" class="log-form-error" role="alert"></p>
+      <button type="submit" id="log-submit-btn" class="log-submit-btn">Log it</button>
+      <p id="analytics-status" class="analytics-status"></p>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Community totals</h2>
+    <div class="stat-grid">
+      <div class="stat-tile">
+        <span class="stat-number" id="stat-month">0</span>
+        <span class="stat-label">This month</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-number" id="stat-year">0</span>
+        <span class="stat-label">This year</span>
+      </div>
+      <div class="stat-tile">
+        <span class="stat-number" id="stat-all-time">0</span>
+        <span class="stat-label">All time</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Breakdown by material</h2>
+    <div id="material-breakdown" class="material-breakdown"></div>
+  </div>
+
+  <div class="card">
+    <p class="note">
+      These totals are self-reported by anyone using this site — there's no way to verify them, so treat this as a
+      community engagement tally rather than an audited recycling statistic.
+    </p>
+  </div>
+</main>
+
+<footer>
+  BinFinderSG &middot; Helping Singapore recycle right
+  <p class="footer-disclaimer">This is a student-created project, not an official government service. Bin locations are subject to change — please verify on-site before relying on them.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/analytics.js"></script>
+<script>
+  initAnalyticsPage();
+</script>
+
+</body>
+</html>

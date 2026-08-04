@@ -47,18 +47,7 @@ function isReportVisible(createdAtIso) {
   return (Date.now() - new Date(createdAtIso).getTime()) < REPORT_VISIBILITY_MS;
 }
 
-let _supabaseClient;
-function getSupabaseClient() {
-  if (_supabaseClient !== undefined) return _supabaseClient;
-  const notConfigured = !SUPABASE_URL || !SUPABASE_ANON_KEY ||
-    SUPABASE_URL.indexOf('YOUR_') === 0 || SUPABASE_ANON_KEY.indexOf('YOUR_') === 0;
-  if (notConfigured || !window.supabase) {
-    _supabaseClient = null;
-  } else {
-    _supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  }
-  return _supabaseClient;
-}
+// getSupabaseClient() now lives in supabase-config.js, shared with analytics.js
 
 function timeAgo(isoString) {
   const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);

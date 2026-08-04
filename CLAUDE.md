@@ -8,18 +8,22 @@ plain HTML/CSS/JS, opened directly or served as static files.
 
 ```
 index.html          Homepage — 4 category buttons (Blue Bins / E-Waste / Textile / BCRS)
+                    + a link to analytics.html
 blue-bin.html        List page for blue (paper/plastic/glass/metal) bins
 e-waste.html          List page for e-waste bins
 textile.html          List page for textile/clothing bins
 bcrs.html             List page for BCRS beverage container return points
+analytics.html         Community recycling counters (month / year / all-time) + log form
 css/main.css          Shared: reset, header, footer, card layout, CSS variables
 css/home.css           Homepage-only: category button grid + backgrounds
 css/list.css            List-page-only: search bar, bin cards, report modal
+css/analytics.css        Analytics-page-only: log form, stat tiles, material breakdown bars
 js/list.js               Renders bin list, town search, distance sort, report UI wiring
-js/reports.js             Supabase client, report modal, submit/fetch logic
-js/supabase-config.js       SUPABASE_URL + SUPABASE_ANON_KEY (safe to commit — public key)
-assets/*.jpg               Homepage button background photos (blue/e-waste/textile only —
-                           BCRS has no photo yet, its button is icon + solid color instead)
+js/reports.js             Report modal, submit/fetch logic for bin_reports
+js/analytics.js            Recycling log form, totals math, material breakdown rendering
+js/supabase-config.js       SUPABASE_URL + SUPABASE_ANON_KEY + getSupabaseClient() — shared
+                           by reports.js and analytics.js (safe to commit, public key)
+assets/*.jpg|png            Homepage button background photos
 supabase-setup.sql          One-time SQL to run in a new Supabase project (see below)
 ```
 
@@ -126,6 +130,33 @@ To add reporting support for a new category, add its slug to the
 `bin_category` CHECK constraint on `bin_reports` (one `ALTER TABLE` in the
 Supabase SQL editor).
 
+## Community recycling analytics
+
+`analytics.html` is a **shared, public counter** — every visitor's logged
+recycling adds to totals everyone sees, not a personal/per-device counter.
+This was a deliberate choice (see the conversation that led to it): the
+site has no accounts, so "personal" totals across devices wouldn't mean
+anything, whereas a community total tells a real aggregate-impact story.
+
+- Table `recycling_log` — `material` (one of the 7 values in
+  `RECYCLING_MATERIALS`, `js/analytics.js`), `quantity` (positive integer,
+  meaning number of items, not weight), `created_at`. Same RLS pattern as
+  `bin_reports`: public anon INSERT + SELECT, no delete.
+- **No aggregation happens in the database.** `fetchRecyclingRows()` pulls
+  every row (`material`, `quantity`, `created_at`) and `computeTotals()`
+  sums them client-side into month/year/all-time buckets and a per-material
+  breakdown. This is simple and fully unit-tested, but doesn't scale
+  indefinitely — if this table ever grows very large, the fix is a
+  Postgres view or an RPC function that aggregates server-side instead.
+- Month/year boundaries are calendar-based (1st of the current month / 1st
+  of January), computed from the viewer's local clock via `new Date()` —
+  not timezone-aware in any special way, just whatever the browser's local
+  time is.
+- The note on the page itself says these are self-reported, unverified
+  numbers — a community engagement tally, not an audited statistic. Don't
+  remove that caveat; it's an intentional Legal-Tech-style honesty choice,
+  same spirit as the "sample, not exhaustive" notes on the bin list pages.
+
 ## Privacy & PDPA alignment
 
 This is a deliberate data-minimization design, not an accident:
@@ -137,6 +168,9 @@ This is a deliberate data-minimization design, not an accident:
   (full/damaged/other), an optional free-text description, an optional
   photo, and a timestamp. That's the full set of columns — see
   `supabase-setup.sql`. None of it identifies the reporter.
+- **What `recycling_log` actually stores** (the analytics feature): a
+  material name, a quantity, and a timestamp. Nothing about who logged it —
+  same minimization reasoning as above.
 - **Photos are the one residual risk.** A photo could incidentally capture
   a bystander's face or a vehicle plate even though we don't ask for that.
   The report form shows a standing notice ("Photos are visible to everyone.
