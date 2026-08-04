@@ -24,3 +24,23 @@
     font-size: 1.2rem;
   }
 }
+
+.welcome-about {
+  max-width: 30rem;
+  margin: 0 auto;
+  padding-top: 1.75rem;
+  text-align: center;
+}
+
+.welcome-about-icon {
+  display: inline-block;
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
+}
+
+.welcome-about p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
