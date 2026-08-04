@@ -45,20 +45,21 @@
   line-height: 1.6;
 }
 
-.welcome-guide-link {
+.welcome-guide-pill {
   display: inline-block;
-  margin-top: 1rem;
-  padding: 0.55rem 1.1rem;
+  margin-top: 1.4rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 999px;
-  border: 1px solid #d8e0df;
-  color: var(--text);
-  font-size: 0.85rem;
-  font-weight: 600;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.32);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
   text-decoration: none;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
-.welcome-guide-link:hover {
-  border-color: var(--green);
-  background: #fff;
+.welcome-guide-pill:hover {
+  background: rgba(255,255,255,0.28);
+  transform: translateY(-1px);
 }
