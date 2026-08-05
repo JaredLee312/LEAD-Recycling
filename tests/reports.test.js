@@ -8,7 +8,9 @@ const {
   reportCooldownRemainingMs,
   markReportSubmitted,
   validateReportForm,
+  validateReportEdit,
   validatePhotoFile,
+  photoStoragePathFromUrl,
   MAX_PHOTO_BYTES,
   REPORT_VISIBILITY_MS,
   isReportVisible,
@@ -160,5 +162,35 @@ describe('REPORT_TYPE_LABELS', () => {
     expect(REPORT_TYPE_LABELS.full).toBeDefined();
     expect(REPORT_TYPE_LABELS.damaged).toBeDefined();
     expect(REPORT_TYPE_LABELS.other).toBeDefined();
+  });
+});
+
+describe('validateReportEdit — editing an existing report', () => {
+  it('blocks saving when no report type is selected', () => {
+    expect(validateReportEdit({ reportType: '', description: '' })).not.toBeNull();
+  });
+
+  it('does not require a photo to be re-attached (unlike a new submission)', () => {
+    expect(validateReportEdit({ reportType: 'full', description: '' })).toBeNull();
+  });
+
+  it('still requires a description when the type is "other"', () => {
+    expect(validateReportEdit({ reportType: 'other', description: '' })).not.toBeNull();
+    expect(validateReportEdit({ reportType: 'other', description: 'Lid is missing' })).toBeNull();
+  });
+});
+
+describe('photoStoragePathFromUrl — recovering the storage path so a deleted report also deletes its photo', () => {
+  it('extracts the path after the bucket name from a public URL', () => {
+    const url = 'https://xyz.supabase.co/storage/v1/object/public/bin-report-photos/blue-bin/1.234_103.8/167-abc.jpg';
+    expect(photoStoragePathFromUrl(url)).toBe('blue-bin/1.234_103.8/167-abc.jpg');
+  });
+
+  it('returns null for a report with no photo', () => {
+    expect(photoStoragePathFromUrl(null)).toBeNull();
+  });
+
+  it('returns null for a url that does not contain the bucket marker', () => {
+    expect(photoStoragePathFromUrl('https://example.com/not-a-supabase-url.jpg')).toBeNull();
   });
 });

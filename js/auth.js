@@ -123,12 +123,13 @@ async function challengeAndVerifyMfa(factorId, code) {
   return data;
 }
 
-// ---- Homepage login gate ----
-// Currently only called from home.html (viewing the bin-finder homepage
-// requires login; other pages stay reachable via direct link without it).
-// Redirects to login.html (preserving the current URL to return to) if the
-// visitor isn't fully authenticated, and returns false so the caller can
-// bail out of the rest of its init/render logic instead of doing wasted work.
+// ---- Login gate ----
+// Called from any page that requires a session to view at all (currently
+// home.html and my-reports.html); other pages stay reachable via direct
+// link without it. Redirects to login.html (preserving the current URL to
+// return to) if the visitor isn't fully authenticated, and returns false
+// so the caller can bail out of the rest of its init/render logic instead
+// of doing wasted work.
 async function requireAuthOrRedirect() {
   if (await isFullyAuthenticated()) return true;
   window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
@@ -149,6 +150,7 @@ async function renderAuthStatus(container) {
   const email = session.user.email;
   container.innerHTML =
     '<span class="auth-status-email">' + email + '</span>' +
+    '<a class="auth-status-link" href="my-reports.html">My Reports</a>' +
     '<button type="button" class="auth-status-logout">Log out</button>';
 
   container.querySelector('.auth-status-logout').addEventListener('click', async function () {

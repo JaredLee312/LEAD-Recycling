@@ -92,6 +92,24 @@ async function fetchReportsByBin(category) {
   return byBin;
 }
 
+function validateReportEdit(form) {
+  if (!form.reportType) {
+    return 'Please select what\'s wrong with the bin.';
+  }
+  if (form.reportType === 'other' && !form.description) {
+    return 'Please add a short description for "Other issue".';
+  }
+  return null;
+}
+
+function photoStoragePathFromUrl(url) {
+  if (!url) return null;
+  const marker = '/bin-report-photos/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return url.slice(idx + marker.length);
+}
+
 async function uploadReportPhoto(file, category, id) {
   const client = getSupabaseClient();
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
@@ -129,6 +147,45 @@ async function submitBinReport(opts) {
     description: opts.description || null,
     photo_url: photoUrl
   });
+  if (error) throw error;
+}
+
+async function fetchMyReports() {
+  const client = getSupabaseClient();
+  if (!client) return [];
+  const session = await getAuthSession();
+  if (!session) return [];
+  const { data, error } = await client
+    .from('bin_reports')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Failed to fetch your reports:', error.message);
+    return [];
+  }
+  return data;
+}
+
+async function updateBinReport(id, changes) {
+  const client = getSupabaseClient();
+  const { error } = await client
+    .from('bin_reports')
+    .update({
+      report_type: changes.reportType,
+      description: changes.description || null
+    })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+async function deleteBinReport(report) {
+  const client = getSupabaseClient();
+  const photoPath = photoStoragePathFromUrl(report.photo_url);
+  if (photoPath) {
+    await client.storage.from('bin-report-photos').remove([photoPath]);
+  }
+  const { error } = await client.from('bin_reports').delete().eq('id', report.id);
   if (error) throw error;
 }
 
@@ -301,7 +358,9 @@ if (typeof module !== 'undefined' && module.exports) {
     reportCooldownRemainingMs: reportCooldownRemainingMs,
     markReportSubmitted: markReportSubmitted,
     validateReportForm: validateReportForm,
+    validateReportEdit: validateReportEdit,
     validatePhotoFile: validatePhotoFile,
+    photoStoragePathFromUrl: photoStoragePathFromUrl,
     MAX_PHOTO_BYTES: MAX_PHOTO_BYTES,
     REPORT_VISIBILITY_MS: REPORT_VISIBILITY_MS,
     isReportVisible: isReportVisible,

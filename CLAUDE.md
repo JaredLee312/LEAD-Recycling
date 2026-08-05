@@ -31,16 +31,26 @@ login.html              A second, compact sign in / sign up / MFA page — used 
                        already-browsing visitor tries to submit a report or log entry
                        without being signed in (redirects here with ?redirect=<page>,
                        distinct from and independent of index.html's embedded form)
+my-reports.html          "My Reports" — a signed-in user's own bin reports, with edit
+                       and delete actions. Requires login to view (same gate pattern
+                       as home.html); linked from the auth-status header widget on
+                       every page and from a link card on home.html.
 css/main.css          Shared: reset, header, footer, card layout, CSS variables,
-                     .auth-status header widget (logged-in email + log out button)
+                     .auth-status header widget (logged-in email, My Reports, log out)
 css/home.css           home.html-only: category button grid + backgrounds
 css/info.css            info.html-only: accept/avoid column lists, category accent borders
 css/welcome.css         index.html-only: hero icon strip
-css/list.css            List-page-only: search bar, bin cards, report modal
+css/list.css            List-page-only: search bar, bin cards, report modal (also
+                       reused by my-reports.html for its edit-report form)
+css/my-reports.css       my-reports.html-only: report card layout, edit/delete buttons
 css/analytics.css        Analytics-page-only: log form, stat tiles, material breakdown bars
 css/auth.css             Shared by index.html and login.html: tabs, form fields, MFA QR/code screens
 js/list.js               Renders bin list, town search, distance sort, report UI wiring
-js/reports.js             Report modal, submit/fetch logic for bin_reports (login-gated)
+js/reports.js             Report modal, submit/fetch/update/delete logic for bin_reports
+                        (login-gated); also fetchMyReports() and photoStoragePathFromUrl(),
+                        shared with my-reports.js
+js/my-reports.js           Renders/edits/deletes the signed-in user's own reports on
+                        my-reports.html
 js/analytics.js            Recycling log form, totals math, material breakdown (login-gated)
 js/auth.js                 Sign up/in/out, session state, MFA enroll/challenge/verify,
                           renderAuthStatus() (the header widget, used on every page)
@@ -120,12 +130,32 @@ backed by a real Supabase project (free tier, Singapore region):
 
 - Table `bin_reports` (see `supabase-setup.sql`) — category, bin identity
   (`bin_id` = `lat.toFixed(6) + '_' + lng.toFixed(6)`, computed client-side,
-  not a DB foreign key), report type, description, photo URL, timestamp.
+  not a DB foreign key), report type, description, photo URL, `user_id`,
+  timestamp.
 - Storage bucket `bin-report-photos`, public.
 - RLS: SELECT is public (`to public`, no login needed to browse reports).
   INSERT requires an authenticated session (`to authenticated`) — see
-  "Authentication & MFA" below. No one (other than via the Supabase
-  dashboard) can delete a report, logged in or not.
+  "Authentication & MFA" below.
+- **Ownership and self-service edit/delete** (`supabase-update-add-report-ownership.sql`):
+  `bin_reports.user_id` defaults to `auth.uid()` at insert time — the client
+  never sets it, so it can't be spoofed to someone else's id (the INSERT
+  policy's `with check` enforces `auth.uid() = user_id` too). UPDATE and
+  DELETE policies are scoped the same way (`using (auth.uid() = user_id)`),
+  so a user can only ever touch their own reports; this is enforced at the
+  database level, not just hidden in the UI. Reports submitted before this
+  migration have no `user_id` on record and so are nobody's to edit/delete
+  via the app — that's expected, not a bug. Storage's built-in `owner`
+  column (auto-set by Supabase on upload) gets the same treatment for the
+  photo itself, via a delete policy on `storage.objects` scoped to
+  `owner = auth.uid()`.
+- **`my-reports.html`** is where this happens: lists the signed-in user's
+  own reports (`fetchMyReports()`, filtered by `user_id` — ignores the
+  24h public-visibility window entirely, since that's about hiding old
+  reports from *other* people, not from their own author), with inline
+  Edit (report type + description only — the photo itself isn't
+  re-uploadable, only removable via deleting the whole report) and Delete
+  (`deleteBinReport()` removes the storage photo first via
+  `photoStoragePathFromUrl()`, then the row).
 - Before the report modal opens, `openReportModal()` in `js/reports.js`
   calls `isFullyAuthenticated()`; if that's false it redirects to
   `login.html?redirect=<current page>` instead of opening the form. This
@@ -297,9 +327,15 @@ what's collected, but not the underlying discipline:
   stored by Supabase's auth system, not in any table this app controls.
 - **What `bin_reports` actually stores**: which bin, what type of issue
   (full/damaged/other), an optional free-text description, a required
-  photo, and a timestamp. No column links a report to the account that
-  submitted it — see `supabase-setup.sql`. Being logged in is required to
-  *write* a row, but the row itself still doesn't identify who wrote it.
+  photo, a timestamp, and — as of the "My Reports" feature — a `user_id`
+  linking the row to the account that submitted it (see
+  `supabase-update-add-report-ownership.sql`). This is a deliberate
+  narrowing of the earlier "reports don't identify who wrote them" design:
+  the tradeoff is that self-service edit/delete requires knowing which
+  reports are whose. The `user_id` is only ever used for that ownership
+  check (RLS `auth.uid() = user_id`) and to power the user's own
+  "My Reports" list — it's never shown publicly alongside a report, and
+  reports from before this feature have no `user_id` at all.
 - **What `recycling_log` actually stores** (the analytics feature): a
   material name, a quantity, and a timestamp. Same non-attribution as
   above — login gates the action, not the data.
