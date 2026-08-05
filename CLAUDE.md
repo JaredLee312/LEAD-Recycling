@@ -14,7 +14,11 @@ index.html          NEW site entry point — a welcome/landing page with the sig
                     Already-authenticated visitors see a "You're logged in" screen
                     with a Continue button through to home.html.
 home.html            The actual bin-finder homepage — 4 category buttons (Blue Bins /
-                    E-Waste / Textile / BCRS) + a link to analytics.html. Requires
+                    E-Waste / Textile / BCRS) + link cards to analytics.html and
+                    info.html. My Reports and Privacy Policy are deliberately NOT
+                    link cards here (kept the page from feeling cluttered) — My
+                    Reports lives in the header auth-status widget (top right, every
+                    page) and Privacy Policy in the footer (every page). Requires
                     login to view (redirects to login.html if visited directly
                     without a session); reached from index.html after signing in.
 blue-bin.html        List page for blue (paper/plastic/glass/metal) bins
@@ -33,11 +37,13 @@ login.html              A second, compact sign in / sign up / MFA page — used 
                        distinct from and independent of index.html's embedded form)
 my-reports.html          "My Reports" — a signed-in user's own bin reports, with edit
                        and delete actions. Requires login to view (same gate pattern
-                       as home.html); linked from the auth-status header widget on
-                       every page and from a link card on home.html.
+                       as home.html); linked only from the auth-status header widget
+                       (top right, every page) — deliberately not a link card on
+                       home.html, to keep that page from feeling cluttered.
 privacy.html             Privacy Policy — what's collected, why, retention, security
                        measures, and how to access/update/delete your data. No login
-                       required. Linked from the footer of every page, from a data
+                       required. Linked from the footer of every page (including
+                       home.html — deliberately not a link card there), from a data
                        notice above every sign-in/sign-up form, and from the consent
                        checkbox on sign-up.
 css/main.css          Shared: reset, header, footer, card layout, CSS variables,
