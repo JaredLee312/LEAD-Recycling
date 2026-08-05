@@ -25,6 +25,7 @@
 
 <main>
   <div class="card">
+    <p class="auth-data-notice">We only collect your email and password to secure your account and prevent spam on public reports and recycling logs &mdash; see our <a href="privacy.html">Privacy Policy</a> for what we collect, how long we keep it, and how to access, update, or delete your data.</p>
     <div class="auth-tabs">
       <button type="button" class="auth-tab active" data-tab="signin">Sign In</button>
       <button type="button" class="auth-tab" data-tab="signup">Create Account</button>
@@ -57,6 +58,12 @@
       <div class="field">
         <label for="signup-confirm">Confirm password</label>
         <input type="password" id="signup-confirm" autocomplete="new-password" required>
+      </div>
+      <div class="field consent-field">
+        <label class="consent-label" for="signup-consent">
+          <input type="checkbox" id="signup-consent">
+          <span>I agree to the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a></span>
+        </label>
       </div>
       <p class="auth-form-error" id="signup-error" role="alert"></p>
       <button type="submit" class="auth-submit-btn">Create Account</button>
@@ -109,7 +116,7 @@
 </main>
 
 <footer>
-  BinFinderSG &middot; Helping Singapore recycle right
+  BinFinderSG &middot; Helping Singapore recycle right &middot; <a href="privacy.html">Privacy Policy</a>
   <p class="footer-disclaimer">This is a student-created project, not an official government service. Bin locations are subject to change — please verify on-site before relying on them.</p>
 </footer>
 

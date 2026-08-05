@@ -112,7 +112,8 @@
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
     const confirmPassword = document.getElementById('signup-confirm').value;
-    const formError = validateAuthForm({ email: email, password: password, confirmPassword: confirmPassword, mode: 'signup' });
+    const consent = document.getElementById('signup-consent').checked;
+    const formError = validateAuthForm({ email: email, password: password, confirmPassword: confirmPassword, consent: consent, mode: 'signup' });
     if (formError) {
       errorEl.textContent = formError;
       return;

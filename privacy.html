@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — BinFinderSG</title>
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/info.css">
+<link rel="stylesheet" href="css/privacy.css">
+</head>
+<body>
+
+<header>
+  <a class="back-link" href="index.html">&larr; Home</a>
+  <span class="badge">SINGAPORE</span>
+  <h1>Privacy Policy</h1>
+  <p>What BinFinderSG collects, why, and how to access, update, or delete it.</p>
+</header>
+
+<main>
+  <div class="card">
+    <p class="guide-intro">
+      BinFinderSG is a student-built project (not a government service — see the
+      footer disclaimer on every page), but it still handles real data from real
+      people, so we hold ourselves to the same standard a production site would.
+      This page explains what we collect, why, and your rights under Singapore's
+      Personal Data Protection Act (PDPA).
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>What we collect</h2>
+    <ul class="privacy-list">
+      <li><strong>Account details:</strong> your email address and password. Both
+        are handled entirely by Supabase Auth, a managed identity provider — we
+        never see, store, or touch your password ourselves. Creating an account
+        also generates a two-factor authentication (TOTP) secret, which Supabase
+        Auth stores, not us.</li>
+      <li><strong>Bin reports</strong> (only if you submit one): which bin, the
+        type of issue, an optional written description, a required photo, when
+        you submitted it, and a link to your account so you can find, edit, or
+        delete it later.</li>
+      <li><strong>Recycling log entries</strong> (only if you log one): a
+        material type, a quantity, and a timestamp. These are <strong>not</strong>
+        linked to your account — they feed an anonymous, aggregated community
+        total, and we have no way to trace an entry back to who submitted it.</li>
+      <li>We never ask for your name, phone number, home address, or any other
+        profile information — browsing, searching, and reading the recycling
+        guide never requires an account at all.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>How "find a bin near you" actually works</h2>
+    <p class="guide-intro">
+      BinFinderSG does <strong>not</strong> use your device's GPS location or your
+      IP address to figure out where you are, and your browser is never asked to
+      share your location. Instead, the town name you type is matched against a
+      small, fixed list of Singapore town coordinates built into the site, and
+      the on-page bin list is sorted by distance from <em>that town's</em>
+      coordinates — not from you. We don't know, request, or store your physical
+      location at any point.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Why we collect what we do</h2>
+    <p class="guide-intro">
+      An account exists for one reason: to prevent anonymous spam on the two
+      actions that write shared, public data — reporting a bin issue and logging
+      a recycling entry. That's it. When you create an account, the sign-up form
+      requires you to actively check a box agreeing to this policy — we don't
+      assume consent just because you typed an email in.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>How long we keep it</h2>
+    <ul class="privacy-list">
+      <li>Bin reports and their photos are kept until you remove them yourself
+        via <a href="my-reports.html">My Reports</a>, or until we delete them
+        after a verified account-deletion request (see below).</li>
+      <li>Reports also stop appearing on the <em>public</em> bin-list pages after
+        24 hours — that only hides old reports from other visitors, it does not
+        delete them, and they stay visible to you on My Reports indefinitely.</li>
+      <li>Recycling log entries can't be traced to an account, so they're kept
+        indefinitely as part of the community's running totals.</li>
+      <li>We don't currently auto-delete accounts that go inactive. If you want
+        your account and its data gone, contact us and we'll do it manually —
+        see below.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>How we protect it</h2>
+    <ul class="privacy-list">
+      <li>Passwords are never handled, stored, or hashed by our own code —
+        Supabase Auth owns that entirely, end to end.</li>
+      <li>Every account requires two-factor authentication (a 6-digit code from
+        an authenticator app) in addition to a password.</li>
+      <li>Access is enforced by Row Level Security rules at the database level —
+        even someone bypassing this website entirely and talking to the database
+        directly still could not read, edit, or delete another user's report.
+        This is a database guarantee, not just a website-level check.</li>
+      <li>All traffic to and from this site is encrypted (HTTPS) — both the
+        website itself and the database it talks to.</li>
+      <li>The API key visible in this site's public source code is a restricted
+        "publishable" key by design; it cannot bypass the database rules above,
+        unlike a private key, and is safe to be public.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Your rights, and how to use them</h2>
+    <ul class="privacy-list">
+      <li><strong>Access, update, or delete a bin report:</strong> sign in and
+        go to <a href="my-reports.html">My Reports</a> at any time — no need to
+        contact anyone.</li>
+      <li><strong>Update your password, change your email, or delete your
+        account entirely:</strong> we don't yet have a self-service page for
+        this, so email <a href="mailto:bensimjy@gmail.com">bensimjy@gmail.com</a>
+        and we'll action verified requests directly, within 30 days.</li>
+      <li><strong>Stop using the site:</strong> you can do this at any time —
+        no account is required to browse bins, the recycling guide, or public
+        analytics.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Changes to this policy</h2>
+    <p class="guide-intro">
+      If what we collect or why ever changes, this page will be updated to
+      match. <strong>Last updated: 5 August 2026.</strong>
+    </p>
+  </div>
+</main>
+
+<footer>
+  BinFinderSG &middot; Helping Singapore recycle right
+  <p class="footer-disclaimer">This is a student-created project, not an official government service. Bin locations are subject to change — please verify on-site before relying on them.</p>
+</footer>
+
+</body>
+</html>

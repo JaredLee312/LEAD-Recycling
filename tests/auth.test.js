@@ -32,21 +32,42 @@ describe('validateAuthForm — sign in', () => {
 describe('validateAuthForm — sign up', () => {
   it('rejects mismatched passwords', () => {
     const result = validateAuthForm({
-      email: 'user@example.com', password: 'password123', confirmPassword: 'different123', mode: 'signup'
+      email: 'user@example.com', password: 'password123', confirmPassword: 'different123', consent: true, mode: 'signup'
     });
     expect(result).not.toBeNull();
   });
 
-  it('accepts matching passwords', () => {
+  it('accepts matching passwords with consent given', () => {
     const result = validateAuthForm({
-      email: 'user@example.com', password: 'password123', confirmPassword: 'password123', mode: 'signup'
+      email: 'user@example.com', password: 'password123', confirmPassword: 'password123', consent: true, mode: 'signup'
     });
     expect(result).toBeNull();
   });
 
   it('rejects a missing confirmPassword field entirely', () => {
-    const result = validateAuthForm({ email: 'user@example.com', password: 'password123', mode: 'signup' });
+    const result = validateAuthForm({ email: 'user@example.com', password: 'password123', consent: true, mode: 'signup' });
     expect(result).not.toBeNull();
+  });
+});
+
+describe('validateAuthForm — sign up requires explicit Privacy Policy consent (PDPA)', () => {
+  it('blocks account creation when the consent checkbox is unchecked', () => {
+    const result = validateAuthForm({
+      email: 'user@example.com', password: 'password123', confirmPassword: 'password123', consent: false, mode: 'signup'
+    });
+    expect(result).not.toBeNull();
+  });
+
+  it('blocks account creation when consent is omitted entirely', () => {
+    const result = validateAuthForm({
+      email: 'user@example.com', password: 'password123', confirmPassword: 'password123', mode: 'signup'
+    });
+    expect(result).not.toBeNull();
+  });
+
+  it('never requires consent for signing in — only new account creation', () => {
+    const result = validateAuthForm({ email: 'user@example.com', password: 'password123', mode: 'signin' });
+    expect(result).toBeNull();
   });
 });
 

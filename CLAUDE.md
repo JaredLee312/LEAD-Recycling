@@ -35,16 +35,24 @@ my-reports.html          "My Reports" — a signed-in user's own bin reports, wi
                        and delete actions. Requires login to view (same gate pattern
                        as home.html); linked from the auth-status header widget on
                        every page and from a link card on home.html.
+privacy.html             Privacy Policy — what's collected, why, retention, security
+                       measures, and how to access/update/delete your data. No login
+                       required. Linked from the footer of every page, from a data
+                       notice above every sign-in/sign-up form, and from the consent
+                       checkbox on sign-up.
 css/main.css          Shared: reset, header, footer, card layout, CSS variables,
                      .auth-status header widget (logged-in email, My Reports, log out)
 css/home.css           home.html-only: category button grid + backgrounds
 css/info.css            info.html-only: accept/avoid column lists, category accent borders
+css/privacy.css          privacy.html-only: bullet list styling
 css/welcome.css         index.html-only: hero icon strip
 css/list.css            List-page-only: search bar, bin cards, report modal (also
                        reused by my-reports.html for its edit-report form)
 css/my-reports.css       my-reports.html-only: report card layout, edit/delete buttons
 css/analytics.css        Analytics-page-only: log form, stat tiles, material breakdown bars
-css/auth.css             Shared by index.html and login.html: tabs, form fields, MFA QR/code screens
+css/auth.css             Shared by index.html and login.html: tabs, form fields, MFA
+                       QR/code screens, the data-collection notice above the tabs,
+                       and the sign-up consent checkbox
 js/list.js               Renders bin list, town search, distance sort, report UI wiring
 js/reports.js             Report modal, submit/fetch/update/delete logic for bin_reports
                         (login-gated); also fetchMyReports() and photoStoragePathFromUrl(),
@@ -318,6 +326,22 @@ what's collected, but not the underlying discipline:
   it exists specifically to gate spam on public write actions (see
   Defense notes on `bin_reports`/`recycling_log` below), not for its own
   sake. Browsing/searching/viewing never asks for anything.
+- **There's a real Privacy Policy** (`privacy.html`) covering what's
+  collected, why, retention, security measures, and how to exercise your
+  rights — not just this CLAUDE.md section. It's linked from the footer of
+  every page, from a data-collection notice sitting above every sign-in/
+  sign-up form (`.auth-data-notice` in `css/auth.css`), and from the
+  sign-up form's consent checkbox itself.
+- **Sign-up requires active consent, not implied consent.** The sign-up
+  form has a required checkbox ("I agree to the Privacy Policy") — leaving
+  it unchecked blocks account creation client-side via `validateAuthForm()`
+  (`js/auth.js`), same validation path as the email/password checks. This
+  only applies to `mode: 'signup'`; signing back in never re-asks for it.
+- **No GPS or IP-based location tracking, and the Privacy Policy says so
+  explicitly.** Town search matches typed text against the hardcoded
+  `TOWN_CENTERS` list (see "Location search" above) — the browser is never
+  asked for location permission, and nothing about where a visitor
+  physically is gets read, sent, or stored.
 - **Passwords never touch our code.** Supabase Auth owns password
   hashing, storage, and verification entirely; `js/auth.js` only ever
   calls its API methods. There is nothing in this repo — client or
@@ -348,6 +372,21 @@ what's collected, but not the underlying discipline:
   (e.g. request IPs at the hosting layer) — the application itself does not
   read, store, or display IP addresses, device IDs, or any other
   identifier tied to a person.
+- **Retention is stated honestly, not aspirationally.** `privacy.html`
+  says reports/photos live until self-deleted via My Reports or removed
+  after a manual account-deletion request, recycling log entries are kept
+  indefinitely (they're anonymous, so there's nothing to purge per-user),
+  and there is **no automated inactive-account deletion** — that's called
+  out as a real gap rather than promising a retention window we don't
+  actually enforce. Same honesty pattern as the spam-cooldown and
+  no-CAPTCHA gaps noted elsewhere in this doc.
+- **Access/update/delete rights are split between self-service and manual,
+  and the Privacy Policy is upfront about which is which.** Reports:
+  fully self-service via My Reports (view/edit/delete, enforced by RLS,
+  see above). Account itself (change email/password, full deletion): no
+  self-service page exists for this yet — `privacy.html` gives a real
+  contact (`bensimjy@gmail.com`) and a 30-day commitment instead of
+  hiding the gap.
 - **Why this matters for PDPA**: Singapore's Personal Data Protection Act
   obligates minimizing collection to what's necessary for the stated
   purpose. An email+password is necessary to prevent anonymous spam on

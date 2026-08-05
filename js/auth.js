@@ -10,6 +10,7 @@ function validateAuthForm(form) {
   if (form.mode === 'signup') {
     if (form.confirmPassword === undefined) return 'Please confirm your password.';
     if (password !== form.confirmPassword) return 'Passwords do not match.';
+    if (!form.consent) return 'Please agree to the Privacy Policy to create an account.';
   }
 
   return null;
