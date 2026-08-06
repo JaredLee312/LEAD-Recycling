@@ -32,35 +32,73 @@ describe('validateAuthForm — sign in', () => {
 describe('validateAuthForm — sign up', () => {
   it('rejects mismatched passwords', () => {
     const result = validateAuthForm({
-      email: 'user@example.com', password: 'password123', confirmPassword: 'different123', consent: true, mode: 'signup'
+      email: 'user@example.com', password: 'Password123!', confirmPassword: 'Different123!', consent: true, mode: 'signup'
     });
     expect(result).not.toBeNull();
   });
 
-  it('accepts matching passwords with consent given', () => {
+  it('accepts matching, strong passwords with consent given', () => {
     const result = validateAuthForm({
-      email: 'user@example.com', password: 'password123', confirmPassword: 'password123', consent: true, mode: 'signup'
+      email: 'user@example.com', password: 'Password123!', confirmPassword: 'Password123!', consent: true, mode: 'signup'
     });
     expect(result).toBeNull();
   });
 
   it('rejects a missing confirmPassword field entirely', () => {
-    const result = validateAuthForm({ email: 'user@example.com', password: 'password123', consent: true, mode: 'signup' });
+    const result = validateAuthForm({ email: 'user@example.com', password: 'Password123!', consent: true, mode: 'signup' });
     expect(result).not.toBeNull();
   });
 });
 
+describe('validateAuthForm — sign up requires a strong password (PDPA: reduce unauthorised access risk)', () => {
+  const base = { email: 'user@example.com', consent: true, mode: 'signup' };
+
+  it('rejects a password with no uppercase letter', () => {
+    const result = validateAuthForm({ ...base, password: 'password123!', confirmPassword: 'password123!' });
+    expect(result).not.toBeNull();
+  });
+
+  it('rejects a password with no lowercase letter', () => {
+    const result = validateAuthForm({ ...base, password: 'PASSWORD123!', confirmPassword: 'PASSWORD123!' });
+    expect(result).not.toBeNull();
+  });
+
+  it('rejects a password with no number', () => {
+    const result = validateAuthForm({ ...base, password: 'Password!!', confirmPassword: 'Password!!' });
+    expect(result).not.toBeNull();
+  });
+
+  it('rejects a password with no symbol', () => {
+    const result = validateAuthForm({ ...base, password: 'Password123', confirmPassword: 'Password123' });
+    expect(result).not.toBeNull();
+  });
+
+  it('accepts a password with all four required character classes', () => {
+    const result = validateAuthForm({ ...base, password: 'Password123!', confirmPassword: 'Password123!' });
+    expect(result).toBeNull();
+  });
+
+  it('never enforces complexity when signing in — only new account creation', () => {
+    // A weak-by-current-standards password must still be able to sign in,
+    // so an account created before this rule existed is never locked out.
+    const result = validateAuthForm({ email: 'user@example.com', password: 'password123', mode: 'signin' });
+    expect(result).toBeNull();
+  });
+});
+
 describe('validateAuthForm — sign up requires explicit Privacy Policy consent (PDPA)', () => {
+  const strongPassword = 'Password123!';
+
   it('blocks account creation when the consent checkbox is unchecked', () => {
     const result = validateAuthForm({
-      email: 'user@example.com', password: 'password123', confirmPassword: 'password123', consent: false, mode: 'signup'
+      email: 'user@example.com', password: strongPassword, confirmPassword: strongPassword, consent: false, mode: 'signup'
     });
     expect(result).not.toBeNull();
   });
 
   it('blocks account creation when consent is omitted entirely', () => {
     const result = validateAuthForm({
-      email: 'user@example.com', password: 'password123', confirmPassword: 'password123', mode: 'signup'
+      email: 'user@example.com', password: strongPassword, confirmPassword: strongPassword, mode: 'signup'
     });
     expect(result).not.toBeNull();
   });

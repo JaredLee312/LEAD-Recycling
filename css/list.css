@@ -75,19 +75,6 @@
   color: var(--accent, var(--green));
 }
 
-.bin-item .info .distance-tag {
-  display: inline-block;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--muted);
-  margin-left: 0.5rem;
-}
-
-.bin-item .info .distance-tag.nearest {
-  color: var(--accent, var(--green));
-  font-weight: 700;
-}
-
 .bin-actions {
   display: flex;
   flex-direction: column;

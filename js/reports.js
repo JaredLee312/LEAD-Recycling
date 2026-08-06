@@ -29,11 +29,15 @@ function validateReportForm(form) {
 }
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+// 'image/jpg' isn't the correct MIME type (image/jpeg is), but some cameras
+// and tools produce it anyway — accepted alongside the correct spelling so a
+// real JPG photo never gets rejected on a technicality.
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 
 function validatePhotoFile(file) {
   if (!file) return null;
-  if (!file.type || !file.type.startsWith('image/')) {
-    return 'Please choose an image file.';
+  if (!file.type || ALLOWED_PHOTO_TYPES.indexOf(file.type) === -1) {
+    return 'Please choose a JPG or PNG image.';
   }
   if (file.size > MAX_PHOTO_BYTES) {
     return 'Photo must be under 10 MB.';
@@ -218,8 +222,8 @@ function ensureReportModal() {
           '<textarea id="report-description" rows="3" placeholder="e.g. Bin at the carpark entrance is overflowing, lid won\'t close"></textarea>' +
         '</div>' +
         '<div class="field">' +
-          '<label for="report-photo">Add a photo <span class="field-hint">(required, under 10 MB)</span></label>' +
-          '<input type="file" id="report-photo" accept="image/*">' +
+          '<label for="report-photo">Add a photo <span class="field-hint">(required, JPG or PNG, under 10 MB)</span></label>' +
+          '<input type="file" id="report-photo" accept="image/jpeg,image/png">' +
           '<p class="report-photo-privacy">Photos are visible to everyone. Please avoid capturing people, faces, or vehicle license plates.</p>' +
           '<img class="report-photo-preview" alt="Preview" style="display:none;">' +
         '</div>' +
@@ -362,6 +366,7 @@ if (typeof module !== 'undefined' && module.exports) {
     validatePhotoFile: validatePhotoFile,
     photoStoragePathFromUrl: photoStoragePathFromUrl,
     MAX_PHOTO_BYTES: MAX_PHOTO_BYTES,
+    ALLOWED_PHOTO_TYPES: ALLOWED_PHOTO_TYPES,
     REPORT_VISIBILITY_MS: REPORT_VISIBILITY_MS,
     isReportVisible: isReportVisible,
     REPORT_TYPE_LABELS: REPORT_TYPE_LABELS

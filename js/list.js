@@ -8,11 +8,6 @@ function haversineKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function formatDistance(km) {
-  if (km < 1) return Math.round(km * 1000) + ' m away';
-  return km.toFixed(1) + ' km away';
-}
-
 function mapsUrl(bin) {
   const query = (typeof bin.lat === 'number' && typeof bin.lng === 'number')
     ? bin.lat + ',' + bin.lng
@@ -137,7 +132,7 @@ function initBinList(data, category) {
     const townMatch = selection.townMatch;
 
     listEl.innerHTML = '';
-    filtered.forEach(function (b, i) {
+    filtered.forEach(function (b) {
       const li = document.createElement('li');
       li.className = 'bin-item';
 
@@ -157,13 +152,6 @@ function initBinList(data, category) {
       tag.className = 'region-tag';
       tag.textContent = b.region;
       info.appendChild(tag);
-
-      if (typeof b.distanceKm === 'number') {
-        const dist = document.createElement('span');
-        dist.className = 'distance-tag' + (i === 0 ? ' nearest' : '');
-        dist.textContent = (i === 0 ? '📍 Nearest · ' : '') + formatDistance(b.distanceKm);
-        info.appendChild(dist);
-      }
 
       const id = binId(b);
       const reports = reportsByBin[id] || [];
@@ -227,7 +215,6 @@ function initBinList(data, category) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     haversineKm: haversineKm,
-    formatDistance: formatDistance,
     mapsUrl: mapsUrl,
     TOWN_CENTERS: TOWN_CENTERS,
     findTownMatch: findTownMatch,

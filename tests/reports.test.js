@@ -108,6 +108,17 @@ describe('validatePhotoFile — Defense: reject bad uploads before they reach th
     expect(err).not.toBeNull();
   });
 
+  it('rejects image formats other than JPG/PNG (e.g. WEBP, GIF, HEIC)', () => {
+    expect(validatePhotoFile({ type: 'image/webp', size: 1000 })).not.toBeNull();
+    expect(validatePhotoFile({ type: 'image/gif', size: 1000 })).not.toBeNull();
+    expect(validatePhotoFile({ type: 'image/heic', size: 1000 })).not.toBeNull();
+  });
+
+  it('accepts JPG under both its common MIME spellings', () => {
+    expect(validatePhotoFile({ type: 'image/jpeg', size: 1000 })).toBeNull();
+    expect(validatePhotoFile({ type: 'image/jpg', size: 1000 })).toBeNull();
+  });
+
   it('rejects files over 10MB', () => {
     const err = validatePhotoFile({ type: 'image/png', size: 11 * 1024 * 1024 });
     expect(err).not.toBeNull();

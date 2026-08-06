@@ -10,6 +10,13 @@ function validateAuthForm(form) {
   if (form.mode === 'signup') {
     if (form.confirmPassword === undefined) return 'Please confirm your password.';
     if (password !== form.confirmPassword) return 'Passwords do not match.';
+    // Complexity is only enforced when choosing a new password (signup) —
+    // not at sign-in, so an existing account's password is never re-judged
+    // against a rule that didn't exist when the account was created.
+    if (!/[A-Z]/.test(password)) return 'Password must include at least one uppercase letter.';
+    if (!/[a-z]/.test(password)) return 'Password must include at least one lowercase letter.';
+    if (!/[0-9]/.test(password)) return 'Password must include at least one number.';
+    if (!/[^A-Za-z0-9]/.test(password)) return 'Password must include at least one symbol.';
     if (!form.consent) return 'Please agree to the Privacy Policy to create an account.';
   }
 

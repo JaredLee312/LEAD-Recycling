@@ -3,7 +3,6 @@ import listModule from '../js/list.js';
 
 const {
   haversineKm,
-  formatDistance,
   mapsUrl,
   TOWN_CENTERS,
   findTownMatch,
@@ -20,17 +19,6 @@ describe('haversineKm', () => {
     const km = haversineKm(1.356191, 103.954634, 1.32398, 103.929984);
     expect(km).toBeGreaterThan(3);
     expect(km).toBeLessThan(7);
-  });
-});
-
-describe('formatDistance', () => {
-  it('formats sub-kilometre distances in metres', () => {
-    expect(formatDistance(0.363)).toBe('363 m away');
-  });
-
-  it('formats distances of 1km or more in kilometres, one decimal place', () => {
-    expect(formatDistance(2.04)).toBe('2.0 km away');
-    expect(formatDistance(12.96)).toBe('13.0 km away');
   });
 });
 
