@@ -46,6 +46,11 @@ privacy.html             Privacy Policy — what's collected, why, retention, se
                        home.html — deliberately not a link card there), from a data
                        notice above every sign-in/sign-up form, and from the consent
                        checkbox on sign-up.
+assistant.html           "Recycling Assistant" — upload/take a photo of an item, an AI
+                       vision model says whether it's recyclable and which bin category.
+                       Requires login (same gate pattern as home.html) — this one isn't
+                       just spam prevention, each query is a real, billed Claude API
+                       call. Linked from a link card on home.html.
 css/main.css          Shared: reset, header, footer, card layout, CSS variables,
                      .auth-status header widget (logged-in email, My Reports, log out)
 css/home.css           home.html-only: category button grid + backgrounds
@@ -59,12 +64,17 @@ css/analytics.css        Analytics-page-only: log form, stat tiles, material bre
 css/auth.css             Shared by index.html and login.html: tabs, form fields, MFA
                        QR/code screens, the data-collection notice above the tabs,
                        and the sign-up consent checkbox
+css/assistant.css         assistant.html-only: chat bubble layout, photo preview
 js/list.js               Renders bin list, town search, distance sort, report UI wiring
 js/reports.js             Report modal, submit/fetch/update/delete logic for bin_reports
                         (login-gated); also fetchMyReports() and photoStoragePathFromUrl(),
-                        shared with my-reports.js
+                        shared with my-reports.js and validatePhotoFile()/MAX_PHOTO_BYTES
+                        shared with assistant.html's photo picker
 js/my-reports.js           Renders/edits/deletes the signed-in user's own reports on
                         my-reports.html
+js/assistant.js             Pure/network logic for the AI recycling assistant: photo →
+                          base64, calls the classify-recyclable Edge Function, cooldown
+js/assistant-page.js         Chat UI wiring for assistant.html (DOM-only, no exports)
 js/analytics.js            Recycling log form, totals math, material breakdown (login-gated)
 js/auth.js                 Sign up/in/out, session state, MFA enroll/challenge/verify,
                           renderAuthStatus() (the header widget, used on every page)
@@ -236,6 +246,59 @@ that a scattered set of personal counters wouldn't.
   numbers — a community engagement tally, not an audited statistic. Don't
   remove that caveat; it's an intentional Legal-Tech-style honesty choice,
   same spirit as the "sample, not exhaustive" notes on the bin list pages.
+
+## Recycling Assistant (AI photo classification)
+
+`assistant.html` lets a signed-in user upload/take a photo of an item and
+get a verdict: recyclable or not, and which bin category. This is the one
+feature in the app that talks to a third-party AI provider, and it's
+architected differently from everything else here because of that:
+
+- **The Anthropic API key is never sent to the browser.** It lives only as
+  a Supabase Edge Function secret (`ANTHROPIC_API_KEY`), read by
+  `supabase/functions/classify-recyclable/index.ts`. The browser calls that
+  function (`client.functions.invoke('classify-recyclable', ...)` in
+  `js/assistant.js`); the function calls Claude server-side and returns just
+  the verdict. This is a deliberate departure from the Supabase anon key
+  pattern used everywhere else in this app — the anon key is safe to expose
+  because RLS is the real enforcement; a raw Anthropic API key has no RLS
+  equivalent, so it can never touch client-side code.
+- **Model: `claude-haiku-4-5`**, chosen specifically for cost — this
+  function is called on every photo a user uploads, and Haiku is more than
+  capable for "what is this and which of four categories does it fit."
+  Don't casually upgrade the model here; that's a real recurring-cost
+  decision, not a code-quality one.
+- **Structured output**, not free-text parsing: the request uses
+  `output_config.format` with a JSON schema (`item`, `recyclable`,
+  `category`, `reason`) so the response is always parseable — no regex or
+  "hope it's valid JSON" fallback.
+- **Login-gated, same UI pattern as home.html/my-reports.html**
+  (`gate-loading` + `gate-hidden` + `requireAuthOrRedirect()`) — but the
+  *reason* is different from the reports/analytics login gates. Those exist
+  to stop anonymous spam on public write actions; this one exists because
+  every query is a real, billed API call, and an anonymous, unrestricted
+  entry point would be a direct funnel for cost abuse. The Edge Function is
+  also deployed with the default `verify_jwt = true`, so the login
+  requirement is enforced at the function level too, not just in the UI —
+  same "client-side is UX, the backend is the real gate" pattern as RLS
+  elsewhere in this app.
+- **Client-side cooldown** (`ASSISTANT_COOLDOWN_MS`, 15s, in `js/assistant.js`)
+  on top of the login gate — same spam-control pattern as
+  `REPORT_COOLDOWN_MS` in `js/reports.js`, shorter because this is a
+  read-only query rather than a public write.
+- **Photo validation is reused, not reimplemented**: `assistant.html`
+  includes `js/reports.js` and calls its `validatePhotoFile()` /
+  `MAX_PHOTO_BYTES` directly, so the 10MB/image-type rule stays in exactly
+  one place.
+- **The AI can be wrong**, and the page says so — a standing disclaimer
+  above the chat area, same honesty pattern as the "self-reported, not
+  audited" note on analytics and the "sample, not exhaustive" note on bin
+  lists.
+- **Deployment is manual, not part of `git push`.** The Edge Function code
+  lives in this repo for version control, but Supabase Edge Functions are
+  deployed separately (Dashboard paste-and-deploy, or `supabase functions
+  deploy` via the CLI) and the `ANTHROPIC_API_KEY` secret is set directly
+  in the Supabase dashboard — neither happens automatically from a commit.
 
 ## Authentication & MFA
 
