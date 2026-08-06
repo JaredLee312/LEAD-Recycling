@@ -9,22 +9,22 @@
 </head>
 <body>
 
-<div id="gate-loading" class="gate-loading"><p>Checking your login&hellip;</p></div>
-
-<header class="gate-hidden">
+<header>
   <a class="back-link" href="home.html">&larr; Home</a>
   <div id="auth-status" class="auth-status"></div>
   <span class="badge">SINGAPORE</span>
   <h1>Recycling Assistant</h1>
-  <p>Take or upload a photo of an item and the assistant will tell you if it can be recycled, and where.</p>
+  <p>Take or upload a photo of an item and the assistant will guess whether it can be recycled, and where.</p>
 </header>
 
-<main class="gate-hidden">
+<main>
   <div class="card">
     <p class="assistant-disclaimer">
-      This uses AI to identify items from a photo — it can get things wrong, especially on
-      unusual, damaged, or unclear items. Treat its answer as a helpful guess, not a guarantee,
-      and use the <a href="info.html">Recycling Guide</a> if you want the definitive rules.
+      This runs entirely in your browser using a general-purpose image recognition model — your
+      photo is never uploaded anywhere, not even to us. It can get things wrong, especially on
+      unusual, damaged, or unclear items, since it's matching against everyday object categories,
+      not actually reasoning about recyclability. Treat its answer as a helpful guess, not a
+      guarantee, and use the <a href="info.html">Recycling Guide</a> if you want the definitive rules.
     </p>
   </div>
 
@@ -36,10 +36,6 @@
         <label for="assistant-photo">Photo of the item</label>
         <input type="file" id="assistant-photo" accept="image/*" capture="environment">
         <img class="assistant-photo-preview" id="assistant-photo-preview" alt="Preview" style="display:none;">
-      </div>
-      <div class="field">
-        <label for="assistant-note">Anything else worth mentioning? <span class="field-hint">(optional)</span></label>
-        <input type="text" id="assistant-note" placeholder="e.g. it's got a crack in it" maxlength="200">
       </div>
       <p class="assistant-form-error" id="assistant-form-error" role="alert"></p>
       <button type="submit" class="assistant-submit-btn" id="assistant-submit-btn">Ask the assistant</button>
@@ -56,17 +52,13 @@
 <script src="js/supabase-config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/reports.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
 <script src="js/assistant.js"></script>
 <script src="js/assistant-page.js"></script>
 <script>
-  requireAuthOrRedirect().then(function (ok) {
-    if (!ok) return; // requireAuthOrRedirect() is already sending the browser to login.html
-    document.getElementById('gate-loading').style.display = 'none';
-    document.querySelector('header').classList.remove('gate-hidden');
-    document.querySelector('main').classList.remove('gate-hidden');
-    renderAuthStatus(document.getElementById('auth-status'));
-    initAssistantPage();
-  });
+  renderAuthStatus(document.getElementById('auth-status'));
+  initAssistantPage();
 </script>
 </body>
 </html>

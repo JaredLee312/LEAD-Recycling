@@ -1,27 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import assistantModule from '../js/assistant.js';
 
 const {
   CATEGORY_INFO,
   validateAssistantForm,
-  ASSISTANT_COOLDOWN_MS,
-  assistantCooldownRemainingMs,
-  markAssistantQueried
+  mapLabelToCategory,
+  REASON_TEMPLATES
 } = assistantModule;
-
-function makeFakeLocalStorage() {
-  let store = {};
-  return {
-    getItem: (k) => (Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null),
-    setItem: (k, v) => { store[k] = String(v); },
-    removeItem: (k) => { delete store[k]; },
-    clear: () => { store = {}; }
-  };
-}
-
-beforeEach(() => {
-  global.localStorage = makeFakeLocalStorage();
-});
 
 describe('validateAssistantForm', () => {
   it('blocks asking without a photo attached', () => {
@@ -53,19 +38,42 @@ describe('CATEGORY_INFO — maps every classifiable category to a real bin page'
   });
 });
 
-describe('assistant query cooldown (cost control — each query is a real, billed API call)', () => {
-  it('has no cooldown before any query has been made', () => {
-    expect(assistantCooldownRemainingMs()).toBe(0);
+describe('mapLabelToCategory — mapping ImageNet labels onto bin categories', () => {
+  it('maps drink containers to blue-bin', () => {
+    expect(mapLabelToCategory('water bottle').category).toBe('blue-bin');
+    expect(mapLabelToCategory('pop bottle, soda bottle').category).toBe('blue-bin');
   });
 
-  it('starts a cooldown immediately after a query is marked', () => {
-    markAssistantQueried();
-    const remaining = assistantCooldownRemainingMs();
-    expect(remaining).toBeGreaterThan(0);
-    expect(remaining).toBeLessThanOrEqual(ASSISTANT_COOLDOWN_MS);
+  it('flags a BCRS hint only for bottle/can-shaped blue-bin items', () => {
+    expect(mapLabelToCategory('water bottle').bcrsHint).toBe(true);
+    expect(mapLabelToCategory('newspaper').bcrsHint).toBe(false);
   });
 
-  it('cooldown is shorter than the report cooldown — this is a read-only query, not a public write', () => {
-    expect(ASSISTANT_COOLDOWN_MS).toBeLessThan(60 * 1000);
+  it('maps electronics and batteries to e-waste', () => {
+    expect(mapLabelToCategory('cellular telephone').category).toBe('e-waste');
+    expect(mapLabelToCategory('laptop, laptop computer').category).toBe('e-waste');
+  });
+
+  it('maps clothing and shoes to textile', () => {
+    expect(mapLabelToCategory('running shoe').category).toBe('textile');
+    expect(mapLabelToCategory('cardigan').category).toBe('textile');
+  });
+
+  it('is case-insensitive', () => {
+    expect(mapLabelToCategory('WATER BOTTLE').category).toBe('blue-bin');
+  });
+
+  it('returns null for labels that match none of the categories', () => {
+    expect(mapLabelToCategory('Rottweiler')).toBeNull();
+    expect(mapLabelToCategory('')).toBeNull();
+  });
+});
+
+describe('REASON_TEMPLATES', () => {
+  it('has a reason for every real category plus the not-recyclable case', () => {
+    expect(REASON_TEMPLATES['blue-bin']).toBeDefined();
+    expect(REASON_TEMPLATES['e-waste']).toBeDefined();
+    expect(REASON_TEMPLATES['textile']).toBeDefined();
+    expect(REASON_TEMPLATES['none']).toBeDefined();
   });
 });

@@ -3,7 +3,6 @@ function initAssistantPage() {
   const form = document.getElementById('assistant-form');
   const photoInput = document.getElementById('assistant-photo');
   const photoPreview = document.getElementById('assistant-photo-preview');
-  const noteInput = document.getElementById('assistant-note');
   const errorEl = document.getElementById('assistant-form-error');
   const submitBtn = document.getElementById('assistant-submit-btn');
 
@@ -25,7 +24,7 @@ function initAssistantPage() {
     photoPreview.style.display = 'block';
   });
 
-  function appendUserMessage(file, note) {
+  function appendUserMessage(file) {
     const li = document.createElement('div');
     li.className = 'chat-msg chat-msg-user';
     const img = document.createElement('img');
@@ -33,24 +32,24 @@ function initAssistantPage() {
     img.src = URL.createObjectURL(file);
     img.alt = '';
     li.appendChild(img);
-    if (note) {
-      const noteEl = document.createElement('p');
-      noteEl.className = 'chat-msg-note';
-      noteEl.textContent = note;
-      li.appendChild(noteEl);
-    }
     chatEl.appendChild(li);
     chatEl.scrollTop = chatEl.scrollHeight;
     return li;
   }
 
-  function appendThinkingMessage() {
+  function appendThinkingMessage(text) {
     const li = document.createElement('div');
     li.className = 'chat-msg chat-msg-ai chat-msg-thinking';
-    li.textContent = 'Looking at your photo…';
+    li.textContent = text;
     chatEl.appendChild(li);
     chatEl.scrollTop = chatEl.scrollHeight;
     return li;
+  }
+
+  function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
   }
 
   function renderResultInto(el, result) {
@@ -79,6 +78,18 @@ function initAssistantPage() {
       link.textContent = 'Find ' + categoryInfo.label + ' locations near you →';
       el.appendChild(link);
     }
+
+    if (result.bcrsHint && result.category === 'blue-bin') {
+      const hint = document.createElement('p');
+      hint.className = 'chat-msg-hint';
+      hint.textContent = "If it carries a deposit refund logo, you can also return it via a BCRS point for a small refund.";
+      el.appendChild(hint);
+    }
+
+    const caveat = document.createElement('p');
+    caveat.className = 'chat-msg-caveat';
+    caveat.textContent = 'This is an automated best guess — double check with the Recycling Guide if unsure.';
+    el.appendChild(caveat);
   }
 
   function renderErrorInto(el, message) {
@@ -86,18 +97,13 @@ function initAssistantPage() {
     el.textContent = message;
   }
 
-  function escapeHtml(s) {
-    const div = document.createElement('div');
-    div.textContent = s;
-    return div.innerHTML;
-  }
+  let modelReady = typeof _mobilenetModel !== 'undefined' && !!_mobilenetModel;
 
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
     errorEl.textContent = '';
 
     const file = photoInput.files[0] || null;
-    const note = noteInput.value.trim();
 
     const formError = validateAssistantForm({ hasPhoto: !!file });
     if (formError) {
@@ -111,27 +117,22 @@ function initAssistantPage() {
       return;
     }
 
-    const cooldown = assistantCooldownRemainingMs();
-    if (cooldown > 0) {
-      errorEl.textContent = 'Please wait ' + Math.ceil(cooldown / 1000) + ' more second' +
-        (Math.ceil(cooldown / 1000) === 1 ? '' : 's') + ' before asking again.';
-      return;
-    }
-
     submitBtn.disabled = true;
     submitBtn.textContent = 'Thinking…';
 
-    appendUserMessage(file, note);
-    const thinkingEl = appendThinkingMessage();
+    appendUserMessage(file);
+    const thinkingEl = appendThinkingMessage(
+      modelReady ? 'Looking at your photo…' : 'Loading the assistant for the first time (a few seconds)…'
+    );
 
     try {
-      const result = await classifyPhoto(file, note);
-      markAssistantQueried();
+      const result = await classifyPhoto(file);
+      modelReady = true;
       renderResultInto(thinkingEl, result);
       form.reset();
       photoPreview.style.display = 'none';
     } catch (err) {
-      renderErrorInto(thinkingEl, err.code === 'NOT_CONFIGURED' ? err.message : 'Something went wrong looking at that photo. Please try again.');
+      renderErrorInto(thinkingEl, 'Something went wrong looking at that photo. Please try again.');
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Ask the assistant';

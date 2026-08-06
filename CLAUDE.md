@@ -46,11 +46,11 @@ privacy.html             Privacy Policy — what's collected, why, retention, se
                        home.html — deliberately not a link card there), from a data
                        notice above every sign-in/sign-up form, and from the consent
                        checkbox on sign-up.
-assistant.html           "Recycling Assistant" — upload/take a photo of an item, an AI
-                       vision model says whether it's recyclable and which bin category.
-                       Requires login (same gate pattern as home.html) — this one isn't
-                       just spam prevention, each query is a real, billed Claude API
-                       call. Linked from a link card on home.html.
+assistant.html           "Recycling Assistant" — upload/take a photo of an item, a free
+                       image-recognition model running in the browser guesses whether
+                       it's recyclable and which bin category. No login required (no
+                       server call at all — nothing to gate). Linked from a link card
+                       on home.html, but reachable directly like info.html.
 css/main.css          Shared: reset, header, footer, card layout, CSS variables,
                      .auth-status header widget (logged-in email, My Reports, log out)
 css/home.css           home.html-only: category button grid + backgrounds
@@ -72,8 +72,8 @@ js/reports.js             Report modal, submit/fetch/update/delete logic for bin
                         shared with assistant.html's photo picker
 js/my-reports.js           Renders/edits/deletes the signed-in user's own reports on
                         my-reports.html
-js/assistant.js             Pure/network logic for the AI recycling assistant: photo →
-                          base64, calls the classify-recyclable Edge Function, cooldown
+js/assistant.js             Recycling assistant logic: loads the mobilenet model, runs
+                          classification on a photo, mapLabelToCategory() keyword lookup
 js/assistant-page.js         Chat UI wiring for assistant.html (DOM-only, no exports)
 js/analytics.js            Recycling log form, totals math, material breakdown (login-gated)
 js/auth.js                 Sign up/in/out, session state, MFA enroll/challenge/verify,
@@ -247,58 +247,57 @@ that a scattered set of personal counters wouldn't.
   remove that caveat; it's an intentional Legal-Tech-style honesty choice,
   same spirit as the "sample, not exhaustive" notes on the bin list pages.
 
-## Recycling Assistant (AI photo classification)
+## Recycling Assistant (client-side photo classification)
 
-`assistant.html` lets a signed-in user upload/take a photo of an item and
-get a verdict: recyclable or not, and which bin category. This is the one
-feature in the app that talks to a third-party AI provider, and it's
-architected differently from everything else here because of that:
+`assistant.html` lets anyone upload/take a photo of an item and get a
+guess: recyclable or not, and which bin category. This used to call Claude
+through a Supabase Edge Function (see git history —
+`supabase/functions/classify-recyclable`, removed) but was deliberately
+rearchitected to run at **zero ongoing cost**, since a school project has
+no budget for a recurring API bill. That constraint shapes everything
+about how this feature works:
 
-- **The Anthropic API key is never sent to the browser.** It lives only as
-  a Supabase Edge Function secret (`ANTHROPIC_API_KEY`), read by
-  `supabase/functions/classify-recyclable/index.ts`. The browser calls that
-  function (`client.functions.invoke('classify-recyclable', ...)` in
-  `js/assistant.js`); the function calls Claude server-side and returns just
-  the verdict. This is a deliberate departure from the Supabase anon key
-  pattern used everywhere else in this app — the anon key is safe to expose
-  because RLS is the real enforcement; a raw Anthropic API key has no RLS
-  equivalent, so it can never touch client-side code.
-- **Model: `claude-haiku-4-5`**, chosen specifically for cost — this
-  function is called on every photo a user uploads, and Haiku is more than
-  capable for "what is this and which of four categories does it fit."
-  Don't casually upgrade the model here; that's a real recurring-cost
-  decision, not a code-quality one.
-- **Structured output**, not free-text parsing: the request uses
-  `output_config.format` with a JSON schema (`item`, `recyclable`,
-  `category`, `reason`) so the response is always parseable — no regex or
-  "hope it's valid JSON" fallback.
-- **Login-gated, same UI pattern as home.html/my-reports.html**
-  (`gate-loading` + `gate-hidden` + `requireAuthOrRedirect()`) — but the
-  *reason* is different from the reports/analytics login gates. Those exist
-  to stop anonymous spam on public write actions; this one exists because
-  every query is a real, billed API call, and an anonymous, unrestricted
-  entry point would be a direct funnel for cost abuse. The Edge Function is
-  also deployed with the default `verify_jwt = true`, so the login
-  requirement is enforced at the function level too, not just in the UI —
-  same "client-side is UX, the backend is the real gate" pattern as RLS
-  elsewhere in this app.
-- **Client-side cooldown** (`ASSISTANT_COOLDOWN_MS`, 15s, in `js/assistant.js`)
-  on top of the login gate — same spam-control pattern as
-  `REPORT_COOLDOWN_MS` in `js/reports.js`, shorter because this is a
-  read-only query rather than a public write.
+- **Runs entirely in the visitor's browser** via `@tensorflow-models/mobilenet`
+  (loaded from a CDN in `assistant.html`, alongside its `@tensorflow/tfjs`
+  dependency) — a free, general-purpose 1000-category image classifier. No
+  API key, no server, no signup, no bill, ever. The tradeoff for that is
+  real: it's matching against everyday object labels ("water bottle",
+  "cellular telephone"), not reasoning about the photo the way a vision-LLM
+  call would, so it can't handle ambiguous, damaged, or composite items
+  well and can't write a genuinely custom explanation.
+- **`mapLabelToCategory()` in `js/assistant.js`** is the actual "intelligence"
+  layered on top of the model's raw output — a keyword lookup translating
+  ImageNet labels onto BinFinderSG's four categories (blue-bin/e-waste/
+  textile keyword lists; BCRS isn't a separate keyword set because the
+  model can't see a deposit-refund logo, so bottle/can matches only ever
+  get a soft "you could also check BCRS" hint, never a primary BCRS
+  verdict). This is the piece most likely to misfire — a mismatch here
+  usually means adding/adjusting a keyword, not a model problem.
+- **No login required.** The only reason this feature was ever gated
+  (`requireAuthOrRedirect()`, matching home.html/my-reports.html) was that
+  each query was a real, billed API call — an unrestricted entry point
+  would've been a direct cost-abuse funnel. That reason no longer applies
+  once classification runs locally with no server round-trip, so the gate
+  was removed along with the client-side query cooldown that existed for
+  the same reason. It's public like `info.html` now.
+- **Stronger privacy than before, as a side effect**: the photo is never
+  uploaded anywhere — not to us, not to a third party — since everything
+  happens in-memory in the browser tab. The disclaimer on the page says so
+  explicitly, and this is genuinely a privacy improvement worth keeping if
+  this feature is ever rearchitected again.
 - **Photo validation is reused, not reimplemented**: `assistant.html`
   includes `js/reports.js` and calls its `validatePhotoFile()` /
   `MAX_PHOTO_BYTES` directly, so the 10MB/image-type rule stays in exactly
   one place.
-- **The AI can be wrong**, and the page says so — a standing disclaimer
-  above the chat area, same honesty pattern as the "self-reported, not
-  audited" note on analytics and the "sample, not exhaustive" note on bin
-  lists.
-- **Deployment is manual, not part of `git push`.** The Edge Function code
-  lives in this repo for version control, but Supabase Edge Functions are
-  deployed separately (Dashboard paste-and-deploy, or `supabase functions
-  deploy` via the CLI) and the `ANTHROPIC_API_KEY` secret is set directly
-  in the Supabase dashboard — neither happens automatically from a commit.
+- **The guess can be wrong**, and the page says so twice — a standing
+  disclaimer above the chat area explaining *why* (general-purpose model,
+  not a recycling-specific one), and a short caveat under every individual
+  result. Same honesty pattern as the "self-reported, not audited" note on
+  analytics and the "sample, not exhaustive" note on bin lists.
+- **First use loads a small model bundle** (a few MB, cached by the browser
+  after the first download) — `js/assistant.js` lazy-loads it on first
+  submit rather than on page load, and the chat shows "Loading the
+  assistant for the first time…" so that delay doesn't look like a bug.
 
 ## Authentication & MFA
 
